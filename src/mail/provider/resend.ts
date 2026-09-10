@@ -1,4 +1,3 @@
-import { websiteConfig } from '@/config/website';
 import { serverEnv } from '@/env/server';
 import { getTemplate } from '../render';
 import type {
@@ -19,9 +18,10 @@ export class ResendProvider implements MailProvider {
 
   constructor() {
     const apiKey = serverEnv.RESEND_API_KEY;
-    const from = websiteConfig.mail?.fromEmail;
+    const from = serverEnv.MAIL_FROM;
     if (!apiKey) throw new Error('RESEND_API_KEY is required.');
-    if (!from) throw new Error('mail.fromEmail is required.');
+    if (!from)
+      throw new Error('MAIL_FROM is required; mail fails closed without it.');
     this.resend = new Resend(apiKey);
     this.from = from;
   }

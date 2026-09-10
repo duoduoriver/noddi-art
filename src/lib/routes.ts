@@ -1,25 +1,24 @@
 export const Routes = {
   Root: '/',
 
-  // Marketing routes
+  // Product routes
+  Generate: '/generate',
+  IosAppIconGenerator: '/ios-app-icon-generator',
+  AndroidAppIconGenerator: '/android-app-icon-generator',
+  XcodeAppiconsetGenerator: '/xcode-appiconset-generator',
+  FaviconGenerator: '/favicon-generator',
+  AppIconResizer: '/app-icon-resizer',
+  AndroidMipmapGenerator: '/android-mipmap-generator',
+  Guides: '/guides',
+  IosAppIconSizes: '/ios-app-icon-sizes',
+  AndroidAppIconSizes: '/android-app-icon-sizes',
+  AndroidAdaptiveIconSafeZone: '/android-adaptive-icon-safe-zone',
+  FaviconSizes: '/favicon-sizes',
+  PwaIconSizes: '/pwa-icon-sizes',
+  XcodeAppiconsetGuide: '/xcode-appiconset-guide',
   Features: '/#features',
   Faqs: '/#faqs',
   Pricing: '/pricing',
-  Blog: '/blog',
-  Changelog: '/changelog',
-  Roadmap: '/roadmap',
-  About: '/about',
-  Contact: '/contact',
-  Waitlist: '/waitlist',
-  Ai: '/ai',
-  AiSummarization: '/ai#text-summarization',
-  AiTranslation: '/ai#translation',
-  AiTagline: '/ai#tagline-generator',
-  AiTts: '/ai#text-to-speech',
-  AiImageFal: '/ai#image-generator-fal',
-  AiImageCf: '/ai#image-generator-cloudflare',
-  AiImageEdit: '/ai#image-editing',
-  AiCaption: '/ai#image-captioning',
 
   // Auth routes
   Auth: '/auth',
@@ -39,6 +38,9 @@ export const Routes = {
 
   // Dashboard routes
   Dashboard: '/dashboard',
+  DashboardProjects: '/dashboard/projects',
+  DashboardHistory: '/dashboard/history',
+  DashboardCredits: '/dashboard/credits',
 
   // Settings routes
   Settings: '/settings',
@@ -53,7 +55,9 @@ export const Routes = {
   // Admin routes
   Admin: '/admin',
   AdminUsers: '/admin/users',
+  AdminGenerations: '/admin/generations',
+  AdminOrders: '/admin/orders',
 } as const;
 
 /** Default login redirect route */
-export const DEFAULT_LOGIN_REDIRECT = Routes.Dashboard;
+export const DEFAULT_LOGIN_REDIRECT = Routes.DashboardProjects;

@@ -63,6 +63,9 @@ const config = defineConfig(({ mode }) => {
       viteReact(),
       // https://developers.cloudflare.com/workers/vite-plugin/
       cloudflare({
+        persistState: process.env.E2E_PERSIST_PATH
+          ? { path: process.env.E2E_PERSIST_PATH }
+          : undefined,
         viteEnvironment: {
           name: 'ssr',
         },

@@ -13,6 +13,8 @@ export const serverEnv = createEnv({
     BETTER_AUTH_SECRET: z.string().default('better-auth-secret'),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
+    GITHUB_CLIENT_ID: z.string().optional(),
+    GITHUB_CLIENT_SECRET: z.string().optional(),
 
     // Mail and Newsletter (Resend)
     RESEND_API_KEY: z.string().optional(),
@@ -43,7 +45,18 @@ export const serverEnv = createEnv({
     WAFFO_MERCHANT_ID: z.string().optional(),
     WAFFO_PRIVATE_KEY: z.string().optional(),
 
-    // AI image generation (fal.ai)
+    // noddi image channels. A fallback is valid only when all three values exist.
+    IMAGE_PRIMARY_BASE_URL: z.url().optional(),
+    IMAGE_PRIMARY_API_KEY: z.string().optional(),
+    IMAGE_PRIMARY_MODEL: z.string().optional(),
+    IMAGE_FALLBACK_BASE_URL: z.url().optional(),
+    IMAGE_FALLBACK_API_KEY: z.string().optional(),
+    IMAGE_FALLBACK_MODEL: z.string().optional(),
+    TURNSTILE_SECRET_KEY: z.string().optional(),
+    AUDIT_HASH_SECRET: z.string().optional(),
+    MAIL_FROM: z.string().optional(),
+
+    // Legacy template image channel; retained only for compatibility.
     FAL_KEY: z.string().optional(),
   },
   runtimeEnv: process.env,

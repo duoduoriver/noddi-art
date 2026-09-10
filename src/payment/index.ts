@@ -48,7 +48,7 @@ export function getPaymentProviderName(): PaymentProviderName | '' {
 /**
  * Get the payment provider
  */
-function getPaymentProvider(): PaymentProvider {
+export function getPaymentProvider(): PaymentProvider {
   if (!paymentProvider) paymentProvider = createProvider();
   return paymentProvider;
 }

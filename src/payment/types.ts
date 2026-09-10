@@ -10,12 +10,11 @@ export const PaymentTypes = {
   ONE_TIME: 'one_time' as const,
 };
 
-/**
- * Payment scene: subscription and lifetime
- */
-export type PaymentScene = 'subscription' | 'lifetime';
+/** Payment purpose. `lifetime` remains for dormant legacy providers. */
+export type PaymentScene = 'subscription' | 'credits' | 'lifetime';
 
 export const PaymentScenes = {
+  CREDITS: 'credits' as const,
   LIFETIME: 'lifetime' as const,
   SUBSCRIPTION: 'subscription' as const,
 };

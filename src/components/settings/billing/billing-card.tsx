@@ -18,13 +18,14 @@ import { useCurrentPlan } from '@/hooks/use-payment';
 import { getPricePlans } from '@/lib/price-plan';
 import { Link } from '@tanstack/react-router';
 import { Routes } from '@/lib/routes';
+import { websiteConfig } from '@/config/website';
 import { IconCircleCheck, IconClock, IconRefresh } from '@tabler/icons-react';
 import { useCallback } from 'react';
 /** Card container: full width, no bottom padding */
 const cardClass = cn('w-full overflow-hidden pt-6 pb-0 flex flex-col');
 /** Footer: right-aligned primary action, muted background */
 const footerClass = cn(
-  'mt-2 px-6 py-4 flex justify-end items-center bg-muted rounded-none'
+  'mt-2 px-6 py-4 flex flex-wrap justify-end items-center gap-2 bg-muted rounded-none'
 );
 /**
  * Billing card: current plan and subscription status
@@ -41,6 +42,14 @@ export function BillingCard() {
   } = useCurrentPlan(!!currentUser?.id);
   const currentPlan = paymentData?.currentPlan ?? null;
   const subscription = paymentData?.subscription ?? null;
+  const hasCustomerId = paymentData?.hasCustomerId ?? false;
+  const hasPaymentHistory = paymentData?.hasPaymentHistory ?? false;
+  const portalRequiresCustomerId =
+    paymentData?.portalRequiresCustomerId ?? true;
+  const canOpenPortal =
+    Boolean(websiteConfig.payment?.enable) &&
+    (Boolean(subscription) || hasPaymentHistory) &&
+    (!portalRequiresCustomerId || hasCustomerId);
   const isLifetimeMember = currentPlan?.isLifetime ?? false;
   // Resolve display name from config (fallback to plan id or "Free")
   const plansRecord = getPricePlans();
@@ -233,17 +242,11 @@ export function BillingCard() {
           </Link>
         )}
 
-        {/* Lifetime: show manage billing */}
-        {isLifetimeMember && currentUser && (
+        {canOpenPortal && currentUser && (
           <CustomerPortalButton returnUrl={undefined}>
-            {m.settings_billing_card_manage_billing()}
-          </CustomerPortalButton>
-        )}
-
-        {/* Subscription: show manage subscription (only when not free and not lifetime) */}
-        {!isFreePlan && !isLifetimeMember && currentUser && (
-          <CustomerPortalButton returnUrl={undefined}>
-            {m.settings_billing_card_manage_subscription()}
+            {subscription && !isLifetimeMember
+              ? m.settings_billing_card_manage_subscription()
+              : m.settings_billing_card_manage_billing()}
           </CustomerPortalButton>
         )}
       </CardFooter>

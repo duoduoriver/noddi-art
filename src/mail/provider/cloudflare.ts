@@ -1,4 +1,3 @@
-import { websiteConfig } from '@/config/website';
 import { getTemplate } from '../render';
 import { serverEnv } from '@/env/server';
 import type {
@@ -21,8 +20,9 @@ export class CloudflareProvider implements MailProvider {
   private endpoint = 'https://api.cloudflare.com/client/v4/accounts';
 
   constructor() {
-    const from = websiteConfig.mail?.fromEmail;
-    if (!from) throw new Error('mail.fromEmail is required.');
+    const from = serverEnv.MAIL_FROM;
+    if (!from)
+      throw new Error('MAIL_FROM is required; mail fails closed without it.');
     if (!serverEnv.CLOUDFLARE_ACCOUNT_ID) {
       throw new Error('CLOUDFLARE_ACCOUNT_ID is required.');
     }

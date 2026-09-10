@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getBaseUrl } from '@/lib/urls';
-import { getSortedPosts } from '@/lib/blog';
 import { websiteConfig } from '@/config/website';
 import {
   baseLocale,
@@ -19,28 +18,39 @@ export const Route = createFileRoute('/sitemap.xml')({
     handlers: {
       GET: async () => {
         const base = getBaseUrl().replace(/\/$/, '');
+        const seoReleaseDate = '2026-09-09';
         const staticUrls: {
           path: string;
-          changefreq?: string;
-          priority?: string;
+          lastmod?: string;
         }[] = [
-          { path: '/', changefreq: 'daily', priority: '1.0' },
-          { path: '/about', changefreq: 'monthly' },
-          { path: '/ai', changefreq: 'monthly' },
-          { path: '/changelog', changefreq: 'weekly' },
-          { path: '/roadmap', changefreq: 'monthly' },
-          { path: '/contact', changefreq: 'monthly' },
-          { path: '/waitlist', changefreq: 'monthly' },
-          { path: '/terms', changefreq: 'monthly' },
-          { path: '/privacy', changefreq: 'monthly' },
-          { path: '/cookie', changefreq: 'monthly' },
+          { path: '/', lastmod: seoReleaseDate },
+          { path: '/generate', lastmod: seoReleaseDate },
+          { path: '/models/gpt-image-2-5-sunburst', lastmod: seoReleaseDate },
+          {
+            path: '/models/gpt-image-2-5-sunburst-app-icon-generator',
+            lastmod: seoReleaseDate,
+          },
+          { path: '/models/sunburst-vs-flare', lastmod: seoReleaseDate },
+          { path: '/ios-app-icon-generator', lastmod: seoReleaseDate },
+          { path: '/android-app-icon-generator', lastmod: seoReleaseDate },
+          { path: '/xcode-appiconset-generator', lastmod: seoReleaseDate },
+          { path: '/favicon-generator', lastmod: seoReleaseDate },
+          { path: '/app-icon-resizer', lastmod: seoReleaseDate },
+          { path: '/android-mipmap-generator', lastmod: seoReleaseDate },
+          { path: '/guides', lastmod: seoReleaseDate },
+          { path: '/ios-app-icon-sizes', lastmod: seoReleaseDate },
+          { path: '/android-app-icon-sizes', lastmod: seoReleaseDate },
+          { path: '/android-adaptive-icon-safe-zone', lastmod: seoReleaseDate },
+          { path: '/favicon-sizes', lastmod: seoReleaseDate },
+          { path: '/pwa-icon-sizes', lastmod: seoReleaseDate },
+          { path: '/xcode-appiconset-guide', lastmod: seoReleaseDate },
+          { path: '/terms' },
+          { path: '/privacy' },
+          { path: '/cookie' },
         ];
 
-        if (websiteConfig.blog?.enable) {
-          staticUrls.push({ path: '/blog', changefreq: 'weekly' });
-        }
         if (websiteConfig.payment?.enable) {
-          staticUrls.push({ path: '/pricing', changefreq: 'weekly' });
+          staticUrls.push({ path: '/pricing', lastmod: seoReleaseDate });
         }
 
         const alternates = (path: string) => {
@@ -80,29 +90,13 @@ export const Route = createFileRoute('/sitemap.xml')({
         };
 
         const staticPart = staticUrls
-          .map((u) =>
-            urlEntry(u.path, { changefreq: u.changefreq, priority: u.priority })
-          )
+          .map((u) => urlEntry(u.path, { lastmod: u.lastmod }))
           .join('\n');
-
-        let blogPart = '';
-        if (websiteConfig.blog?.enable) {
-          const posts = getSortedPosts(baseLocale);
-          blogPart = posts
-            .map((p) =>
-              urlEntry(`/blog/${p.slug}`, {
-                changefreq: 'weekly',
-                lastmod: new Date(p.date).toISOString().slice(0, 10),
-              })
-            )
-            .join('\n');
-        }
 
         const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${staticPart}
-${blogPart ? `\n${blogPart}` : ''}
 </urlset>`;
 
         return new Response(sitemap, {

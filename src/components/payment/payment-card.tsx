@@ -151,7 +151,12 @@ export function PaymentCard({
   useEffect(() => {
     if (status !== 'success' || !callback) return;
     const run = async () => {
-      await queryClient.invalidateQueries({ queryKey: ['currentPlan'] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['currentPlan'] }),
+        queryClient.invalidateQueries({ queryKey: ['noddi-credits'] }),
+        queryClient.invalidateQueries({ queryKey: ['noddi-ledger'] }),
+        queryClient.invalidateQueries({ queryKey: ['payment-history'] }),
+      ]);
       await queryClient.refetchQueries({ queryKey: ['currentPlan'] });
       navigate({ to: callback });
     };

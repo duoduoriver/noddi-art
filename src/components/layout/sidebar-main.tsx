@@ -61,7 +61,7 @@ export function SidebarMain({ user }: SidebarMainProps) {
     if (!href) return false;
     const p = pathname.replace(/\/$/, '') || '/';
     const h = href.replace(/\/$/, '') || '/';
-    return p === h;
+    return p === h || (h !== '/' && p.startsWith(`${h}/`));
   };
 
   const renderItem = (item: MenuItemConfig, key: string) => {

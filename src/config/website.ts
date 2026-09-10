@@ -1,56 +1,24 @@
-import { getMessageList } from '@/lib/locale';
-import { m } from '@/locale/paraglide/messages';
 import { publicEnv } from '@/env/public';
+import { m } from '@/locale/paraglide/messages';
 import type { WebsiteConfig } from '../types';
+import { PACK_CATALOG, PLAN_CATALOG } from '@/credits/catalog';
 import {
   DEFAULT_ALLOWED_TYPES,
   DEFAULT_MAX_FILE_SIZE,
   DEFAULT_USER_FILES_FOLDER,
 } from '@/storage/constants';
 
-// Payment provider controlled by env var: 'stripe' | 'creem' | 'waffo' | '' (empty means disabled)
-const paymentProvider = publicEnv.VITE_PAYMENT_PROVIDER;
-const isPaymentEnabled = paymentProvider !== '';
-// Price/product IDs per provider; add a new row when adding a provider
-const providerPriceIds = {
-  stripe: {
-    proMonthly: publicEnv.VITE_STRIPE_PRICE_PRO_MONTHLY,
-    proYearly: publicEnv.VITE_STRIPE_PRICE_PRO_YEARLY,
-    lifetime: publicEnv.VITE_STRIPE_PRICE_LIFETIME,
-  },
-  creem: {
-    proMonthly: publicEnv.VITE_CREEM_PRODUCT_PRO_MONTHLY,
-    proYearly: publicEnv.VITE_CREEM_PRODUCT_PRO_YEARLY,
-    lifetime: publicEnv.VITE_CREEM_PRODUCT_LIFETIME,
-  },
-  waffo: {
-    proMonthly: publicEnv.VITE_WAFFO_PRODUCT_PRO_MONTHLY,
-    proYearly: publicEnv.VITE_WAFFO_PRODUCT_PRO_YEARLY,
-    lifetime: publicEnv.VITE_WAFFO_PRODUCT_LIFETIME,
-  },
-} satisfies Record<
-  Exclude<typeof paymentProvider, ''>,
-  Record<'proMonthly' | 'proYearly' | 'lifetime', string | undefined>
->;
-const activePriceIds = isPaymentEnabled
-  ? providerPriceIds[paymentProvider]
-  : undefined;
-const priceIds = {
-  proMonthly: activePriceIds?.proMonthly ?? '',
-  proYearly: activePriceIds?.proYearly ?? '',
-  lifetime: activePriceIds?.lifetime ?? '',
+const waffo = {
+  pro: publicEnv.VITE_WAFFO_PRODUCT_PRO_MONTHLY ?? '',
+  studio: publicEnv.VITE_WAFFO_PRODUCT_STUDIO_MONTHLY ?? '',
+  launch: publicEnv.VITE_WAFFO_PRODUCT_LAUNCH_PACK ?? '',
+  maker: publicEnv.VITE_WAFFO_PRODUCT_MAKER_PACK ?? '',
+  studioPack: publicEnv.VITE_WAFFO_PRODUCT_STUDIO_PACK ?? '',
 };
 
-/**
- * Website config
- */
+/** Public product identity is Sunburst AI; Worker/D1/R2 infrastructure keeps its legacy names. */
 export const websiteConfig: WebsiteConfig = {
-  ui: {
-    mode: {
-      defaultMode: 'dark',
-      enableSwitch: true,
-    },
-  },
+  ui: { mode: { defaultMode: 'light', enableSwitch: true } },
   metadata: {
     get name() {
       return m.site_name();
@@ -67,45 +35,26 @@ export const websiteConfig: WebsiteConfig = {
       logoDark: '/logo-dark.png',
     },
   },
-  social: {
-    github: 'https://github.com/MkFastHQ',
-    discord: 'https://mksaas.link/discord',
-    twitter: 'https://x.com/TanStarter',
-    youtube: 'https://www.youtube.com/@TanStarter',
-  },
+  social: {},
   auth: {
     enable: true,
     enableGoogleLogin: true,
     enableCredentialLogin: true,
     enableDeleteAccount: true,
   },
-  blog: {
-    enable: true,
-    paginationSize: 6,
-  },
-  affiliates: {
-    enable: false,
-    provider: 'affonso',
-  },
+  blog: { enable: false, paginationSize: 6 },
   mail: {
     enable: true,
     provider: 'cloudflare',
-    fromEmail: 'TanStarter <support@tanstarter.dev>',
-    supportEmail: 'TanStarter <support@tanstarter.dev>',
+    supportEmail: publicEnv.VITE_SUPPORT_EMAIL,
   },
   newsletter: {
-    enable: true,
+    enable: false,
     provider: 'resend',
-    autoSubscribeAfterSignUp: true,
+    autoSubscribeAfterSignUp: false,
   },
-  notification: {
-    enable: import.meta.env.MODE !== 'e2e',
-    provider: 'discord',
-  },
-  cache: {
-    enable: true,
-    provider: 'kv',
-  },
+  notification: { enable: false, provider: 'discord' },
+  cache: { enable: true, provider: 'kv' },
   storage: {
     enable: true,
     provider: 'r2',
@@ -114,87 +63,107 @@ export const websiteConfig: WebsiteConfig = {
     userFilesFolder: DEFAULT_USER_FILES_FOLDER,
   },
   payment: {
-    enable: isPaymentEnabled,
-    provider: isPaymentEnabled ? paymentProvider : undefined,
+    enable: publicEnv.VITE_PAYMENT_PROVIDER === 'waffo',
+    provider: publicEnv.VITE_PAYMENT_PROVIDER === 'waffo' ? 'waffo' : undefined,
     price: {
       plans: {
         free: {
           id: 'free',
+          name: 'Free',
+          description: 'Try the Sunburst AI concept sheet.',
+          features: ['2 plan credits'],
+          limits: ['Concept sheets only'],
           prices: [],
           isFree: true,
           isLifetime: false,
-          get name() {
-            return m.pricing_plans_free_name();
-          },
-          get description() {
-            return m.pricing_plans_free_description();
-          },
-          get features() {
-            return [...getMessageList(m.pricing_plans_free_features())];
-          },
-          get limits() {
-            return [...getMessageList(m.pricing_plans_free_limits())];
-          },
         },
         pro: {
           id: 'pro',
+          name: 'Pro',
+          description: 'Monthly credits for regular icon work.',
+          features: ['100 monthly credits'],
+          limits: [],
           prices: [
             {
               type: 'subscription',
-              priceId: priceIds.proMonthly,
-              amount: 990,
+              priceId: waffo.pro,
+              amount: PLAN_CATALOG.pro.cents,
               currency: 'USD',
               interval: 'month',
-            },
-            {
-              type: 'subscription',
-              priceId: priceIds.proYearly,
-              amount: 9900,
-              currency: 'USD',
-              interval: 'year',
             },
           ],
           isFree: false,
           isLifetime: false,
           popular: true,
-          get name() {
-            return m.pricing_plans_pro_name();
-          },
-          get description() {
-            return m.pricing_plans_pro_description();
-          },
-          get features() {
-            return [...getMessageList(m.pricing_plans_pro_features())];
-          },
-          get limits() {
-            return [...getMessageList(m.pricing_plans_pro_limits())];
-          },
         },
-        lifetime: {
-          id: 'lifetime',
+        studio: {
+          id: 'studio',
+          name: 'Studio',
+          description: 'Monthly credits for teams and launches.',
+          features: ['400 monthly credits'],
+          limits: [],
           prices: [
             {
-              type: 'one_time',
-              priceId: priceIds.lifetime,
-              amount: 19900,
+              type: 'subscription',
+              priceId: waffo.studio,
+              amount: PLAN_CATALOG.studio.cents,
               currency: 'USD',
-              allowPromotionCode: true,
+              interval: 'month',
             },
           ],
           isFree: false,
-          isLifetime: true,
-          get name() {
-            return m.pricing_plans_lifetime_name();
-          },
-          get description() {
-            return m.pricing_plans_lifetime_description();
-          },
-          get features() {
-            return [...getMessageList(m.pricing_plans_lifetime_features())];
-          },
-          get limits() {
-            return [...getMessageList(m.pricing_plans_lifetime_limits())];
-          },
+          isLifetime: false,
+        },
+        launch: {
+          id: 'launch',
+          name: 'Launch Pack',
+          description: '100 permanent credits.',
+          features: ['100 purchased credits'],
+          limits: [],
+          prices: [
+            {
+              type: 'one_time',
+              priceId: waffo.launch,
+              amount: PACK_CATALOG.launch.cents,
+              currency: 'USD',
+            },
+          ],
+          isFree: false,
+          isLifetime: false,
+        },
+        maker: {
+          id: 'maker',
+          name: 'Maker Pack',
+          description: '300 permanent credits.',
+          features: ['300 purchased credits'],
+          limits: [],
+          prices: [
+            {
+              type: 'one_time',
+              priceId: waffo.maker,
+              amount: PACK_CATALOG.maker.cents,
+              currency: 'USD',
+            },
+          ],
+          isFree: false,
+          isLifetime: false,
+        },
+        'studio-pack': {
+          id: 'studio-pack',
+          name: 'Studio Pack',
+          description: '800 permanent credits.',
+          features: ['800 purchased credits'],
+          limits: [],
+          prices: [
+            {
+              type: 'one_time',
+              priceId: waffo.studioPack,
+              amount: PACK_CATALOG['studio-pack'].cents,
+              currency: 'USD',
+            },
+          ],
+          isFree: false,
+          isLifetime: false,
         },
       },
     },

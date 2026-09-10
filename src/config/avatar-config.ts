@@ -1,33 +1,28 @@
 import { m } from '@/locale/paraglide/messages';
 import {
   IconCreditCard,
-  IconLayoutDashboard,
+  IconPalette,
   IconSettings2,
 } from '@tabler/icons-react';
 import { Routes } from '@/lib/routes';
 import type { MenuItemConfig } from '../types';
-import { websiteConfig } from './website';
 /**
  * Avatar dropdown links
  */
 export function getAvatarLinks(): MenuItemConfig[] {
   return [
     {
-      title: m.dashboard_avatar_dashboard(),
-      href: Routes.Dashboard,
-      icon: IconLayoutDashboard,
+      title: m.noddi_nav_my_projects(),
+      href: Routes.DashboardProjects,
+      icon: IconPalette,
     },
-    ...(websiteConfig.payment?.enable
-      ? [
-          {
-            title: m.dashboard_avatar_billing(),
-            href: Routes.SettingsBilling,
-            icon: IconCreditCard,
-          },
-        ]
-      : []),
     {
-      title: m.dashboard_avatar_settings(),
+      title: m.noddi_nav_credits_billing(),
+      href: Routes.DashboardCredits,
+      icon: IconCreditCard,
+    },
+    {
+      title: m.noddi_nav_account_settings(),
       href: Routes.SettingsProfile,
       icon: IconSettings2,
     },

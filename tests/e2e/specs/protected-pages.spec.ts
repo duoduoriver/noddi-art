@@ -20,7 +20,7 @@ const protectedPages = [
   { path: '/settings/security', name: 'security settings' },
   { path: '/settings/apikeys', name: 'api keys settings' },
   { path: '/settings/files', name: 'files settings' },
-  { path: '/settings/billing', name: 'billing settings' },
+  { path: '/dashboard/credits', name: 'credits and billing' },
   { path: '/settings/payment', name: 'payment result' },
   { path: '/settings/notifications', name: 'notification settings' },
 ] as const;
@@ -65,6 +65,16 @@ test.describe('protected page smoke coverage', () => {
     });
   }
 
+  test('redirects the legacy billing page to credits and billing', async ({
+    page,
+    request,
+  }) => {
+    const user = await registerE2EUser(request, { role: 'user' });
+    await loginByForm(page, user);
+    await page.goto('/settings/billing');
+    await expect(page).toHaveURL(/\/dashboard\/credits\/?$/);
+  });
+
   test('keeps the desktop sidebar collapsed across protected route groups', async ({
     page,
     request,
@@ -80,12 +90,12 @@ test.describe('protected page smoke coverage', () => {
     await expect(page).toHaveURL(/\/settings\/profile\/?$/);
     await expect(sidebar).toHaveAttribute('data-state', 'collapsed');
 
-    await sidebar.locator('a[href$="/settings/security"]').click();
-    await expect(page).toHaveURL(/\/settings\/security\/?$/);
+    await sidebar.locator('a[href$="/dashboard/credits"]').click();
+    await expect(page).toHaveURL(/\/dashboard\/credits\/?$/);
     await expect(sidebar).toHaveAttribute('data-state', 'collapsed');
 
-    await sidebar.locator('a[href$="/dashboard"]').click();
-    await expect(page).toHaveURL(/\/dashboard\/?$/);
+    await sidebar.locator('a[href$="/dashboard/projects"]').click();
+    await expect(page).toHaveURL(/\/dashboard\/projects\/?$/);
     await expect(sidebar).toHaveAttribute('data-state', 'collapsed');
   });
 });

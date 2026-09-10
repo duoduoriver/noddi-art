@@ -3,7 +3,7 @@ import { getRequestHeaders } from '@tanstack/react-start/server';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/auth/auth';
 import { getDb } from '@/db';
-import { userFiles } from '@/db/app.schema';
+import { generatedAssets, userFiles } from '@/db/app.schema';
 import { getFile } from '@/storage';
 import { isPublicFolder } from '@/storage/utils';
 import { ConfigurationError } from '@/storage/types';
@@ -30,7 +30,11 @@ export const Route = createFileRoute('/api/storage/file')({
 
           const db = getDb();
           const [fileRecord] = await db
-            .select({ userId: userFiles.userId, isPublic: userFiles.isPublic })
+            .select({
+              id: userFiles.id,
+              userId: userFiles.userId,
+              isPublic: userFiles.isPublic,
+            })
             .from(userFiles)
             .where(eq(userFiles.r2Key, key))
             .limit(1);
@@ -42,6 +46,14 @@ export const Route = createFileRoute('/api/storage/file')({
           if (fileRecord && !fileRecord.isPublic) {
             if (!userId || fileRecord.userId !== userId) {
               return new Response('Forbidden', { status: 403 });
+            }
+            const [asset] = await db
+              .select({ status: generatedAssets.status })
+              .from(generatedAssets)
+              .where(eq(generatedAssets.userFileId, fileRecord.id))
+              .limit(1);
+            if (asset && asset.status !== 'active') {
+              return new Response('Not Found', { status: 404 });
             }
           }
 

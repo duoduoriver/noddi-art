@@ -58,6 +58,11 @@ vi.mock('@/notification', () => ({
   sendPaymentNotification: vi.fn(),
 }));
 
+vi.mock('@/credits/service', () => ({
+  grantPurchasedCredits: vi.fn(),
+  grantSubscriptionPeriod: vi.fn(),
+}));
+
 vi.mock('@/lib/price-plan', () => ({
   findPlanByPlanId: vi.fn(() => ({ id: 'pro' })),
   findPriceInPlan: vi.fn(() => ({

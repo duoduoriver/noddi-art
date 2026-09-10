@@ -40,11 +40,18 @@ export function UserButton({ user }: UserButtonProps) {
   };
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger aria-label={m.common_user_menu()}>
+      <DropdownMenuTrigger
+        aria-label={m.common_user_menu()}
+        className="relative flex size-10 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9b7bff]"
+      >
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 rotate-[-12deg] rounded-full border-[3px] border-[#9b7bff]"
+        />
         <UserAvatar
           name={user.name ?? null}
           image={user.image ?? null}
-          className="size-8 border"
+          className="relative size-8 border-0"
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">

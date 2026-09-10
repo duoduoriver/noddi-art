@@ -8,6 +8,11 @@ import {
   WebhookEventType,
 } from '@waffo/pancake-ts';
 import { eq, or } from 'drizzle-orm';
+import {
+  grantPurchasedCredits,
+  grantSubscriptionPeriod,
+} from '@/credits/service';
+import { isPaidPlan, type NoddiPackCode } from '@/credits/catalog';
 import { getDb } from '@/db';
 import { payment } from '@/db/app.schema';
 import { findPlanByPlanId, findPriceInPlan } from '@/lib/price-plan';
@@ -171,7 +176,14 @@ export class WaffoProvider implements PaymentProvider {
           await this.createSubscriptionPayment(event);
           break;
         case WebhookEventType.SubscriptionPaymentSucceeded:
-          await this.updateSubscription(event, { status: 'active' });
+          // Older Waffo renewal payloads may omit checkout metadata. Preserve
+          // the current subscription record in that case; otherwise the same
+          // period-grant routine handles activated and renewal events.
+          if (this.getUserId(event.data) && this.getPriceId(event.data)) {
+            await this.createSubscriptionPayment(event);
+          } else {
+            await this.updateSubscription(event, { status: 'active' });
+          }
           break;
         case WebhookEventType.SubscriptionUpdated:
           await this.updateSubscription(event, { syncPlan: true });
@@ -275,15 +287,10 @@ export class WaffoProvider implements PaymentProvider {
           userId,
           customerId: data.merchantProvidedBuyerIdentity ?? userId,
           subscriptionId: null,
-          // The checkout `sessionId` returned by createCheckout (CHK_*) is
-          // never carried on webhook payloads, so no server function can
-          // match orders back to it. Leave null instead of storing orderId
-          // under a misleading column name — Waffo callers redirect straight
-          // to Billing and do not rely on session polling.
           sessionId: null,
           invoiceId: data.paymentId ?? event.eventId,
           type: PaymentTypes.ONE_TIME,
-          scene: PaymentScenes.LIFETIME,
+          scene: PaymentScenes.CREDITS,
           interval: null,
           status: 'completed',
           paid: true,
@@ -295,19 +302,27 @@ export class WaffoProvider implements PaymentProvider {
           createdAt: now,
           updatedAt: now,
         });
-      await sendPaymentNotification({
-        sessionId: data.orderId,
-        customerId: data.merchantProvidedBuyerIdentity ?? userId,
-        userName: data.orderMetadata?.userName ?? data.buyerEmail,
-        amount: Number(data.amount),
-      });
     } catch (error) {
-      if (this.isUniqueViolation(error)) {
-        console.log('Waffo one-time payment already exists, skipping');
-        return;
-      }
-      throw error;
+      if (!this.isUniqueViolation(error)) throw error;
     }
+    const plan = findPlanByPlanId(data.orderMetadata?.planId ?? '');
+    if (
+      plan?.id === 'launch' ||
+      plan?.id === 'maker' ||
+      plan?.id === 'studio-pack'
+    ) {
+      await grantPurchasedCredits(
+        userId,
+        data.orderId,
+        plan.id as NoddiPackCode
+      );
+    }
+    await sendPaymentNotification({
+      sessionId: data.orderId,
+      customerId: data.merchantProvidedBuyerIdentity ?? userId,
+      userName: data.orderMetadata?.userName ?? data.buyerEmail,
+      amount: Number(data.amount),
+    });
   }
 
   private async createSubscriptionPayment(event: WaffoEvent): Promise<void> {
@@ -330,8 +345,6 @@ export class WaffoProvider implements PaymentProvider {
           userId,
           customerId: data.merchantProvidedBuyerIdentity ?? userId,
           subscriptionId: data.orderId,
-          // See createOneTimePayment: Waffo webhooks do not carry the
-          // checkout session id, so we cannot round-trip CHK_* here.
           sessionId: null,
           invoiceId: data.paymentId ?? event.eventId,
           type: PaymentTypes.SUBSCRIPTION,
@@ -348,11 +361,20 @@ export class WaffoProvider implements PaymentProvider {
           updatedAt: now,
         });
     } catch (error) {
-      if (this.isUniqueViolation(error)) {
-        console.log('Waffo subscription payment already exists, skipping');
-        return;
-      }
-      throw error;
+      if (!this.isUniqueViolation(error)) throw error;
+      await this.updateSubscription(event, { status: 'active' });
+    }
+    const plan = findPlanByPlanId(data.orderMetadata?.planId ?? '');
+    const periodKey =
+      periodStart?.toISOString() ?? data.paymentId ?? event.eventId;
+    if (plan && isPaidPlan(plan.id)) {
+      await grantSubscriptionPeriod(
+        userId,
+        data.orderId,
+        periodKey,
+        plan.id,
+        periodEnd
+      );
     }
   }
 

@@ -1,9 +1,18 @@
 import { getDb } from '@/db';
 import { payment } from '@/db/app.schema';
 import { user } from '@/db/auth.schema';
-import { findPlanByPriceId, getAllPricePlans } from '@/lib/price-plan';
+import {
+  findPlanByPlanId,
+  findPlanByPriceId,
+  findPriceInPlan,
+  getAllPricePlans,
+} from '@/lib/price-plan';
 import { authApiMiddleware } from '@/middlewares/auth-middleware';
-import { createCheckout, createCustomerPortal } from '@/payment';
+import {
+  createCheckout,
+  createCustomerPortal,
+  getPaymentProvider,
+} from '@/payment';
 import type {
   PaymentStatus,
   PlanInterval,
@@ -36,23 +45,62 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
       .where(eq(user.id, userId))
       .limit(1);
     if (!userRow?.email) throw new Error('User email not found');
-    const { planId, priceId, successUrl, cancelUrl, metadata } = data;
+    const { planId, priceId, successUrl, cancelUrl } = data;
+    const plan = findPlanByPlanId(planId);
+    const price = findPriceInPlan(planId, priceId);
+    if (!plan || !price || !price.priceId)
+      throw new Error('Invalid product selection');
     const baseUrl = process.env.VITE_BASE_URL ?? '';
+    const origin = new URL(baseUrl).origin;
+    const sameOrigin = (value: string | undefined, fallback: string) => {
+      if (!value) return fallback;
+      if (new URL(value).origin !== origin)
+        throw new Error('Redirect URL must be same-origin');
+      return value;
+    };
     const isCreem = websiteConfig.payment?.provider === 'creem';
-    const cancel = cancelUrl ?? `${baseUrl}/settings/billing`;
+    const cancel = sameOrigin(cancelUrl, `${baseUrl}/settings/billing`);
 
     // For Stripe: {CHECKOUT_SESSION_ID} is replaced by Stripe on redirect,
     // then the Payment page polls by sessionId until the webhook writes the DB record.
     // For Creem: Creem does NOT replace URL placeholders and has its own
     // payment confirmation page, so redirect straight to billing.
     const success = isCreem
-      ? (successUrl ?? `${baseUrl}/settings/billing`)
-      : (successUrl ??
-        `${baseUrl}/settings/payment?session_id={CHECKOUT_SESSION_ID}&callback=/settings/billing`);
+      ? sameOrigin(successUrl, `${baseUrl}/settings/billing`)
+      : sameOrigin(
+          successUrl,
+          `${baseUrl}/settings/payment?session_id={CHECKOUT_SESSION_ID}&callback=/settings/billing`
+        );
+    const scene = price.type === 'one_time' ? 'credits' : 'subscription';
+    if (scene === 'subscription') {
+      const [active] = await db
+        .select({ id: payment.id })
+        .from(payment)
+        .where(
+          and(
+            eq(payment.userId, userId),
+            eq(payment.type, PaymentTypes.SUBSCRIPTION),
+            eq(payment.paid, true),
+            or(eq(payment.status, 'active'), eq(payment.status, 'trialing'))
+          )
+        )
+        .limit(1);
+      if (active)
+        throw new Error(
+          'An active subscription already exists. Use Billing to manage it.'
+        );
+    }
+    // Product facts and credit metadata are server-owned; client metadata is ignored.
     const checkoutMetadata = {
-      ...metadata,
       userId,
       userName: userRow.name ?? '',
+      planId: plan.id,
+      priceId: price.priceId,
+      scene,
+      credits:
+        scene === 'credits'
+          ? String(plan.id === 'launch' ? 100 : plan.id === 'maker' ? 300 : 800)
+          : '',
     };
 
     const result = await createCheckout({
@@ -82,24 +130,63 @@ export const createCustomerPortalSession = createServerFn({ method: 'POST' })
       .from(user)
       .where(eq(user.id, userId))
       .limit(1);
-    if (!row?.customerId) {
+    const provider = getPaymentProvider();
+    if (provider.requiresCustomerId !== false && !row?.customerId) {
       throw new Error('No customer found for user');
     }
     const baseUrl = process.env.VITE_BASE_URL ?? '';
     const returnUrl = data.returnUrl ?? `${baseUrl}/settings/billing`;
+    if (new URL(returnUrl).origin !== new URL(baseUrl).origin) {
+      throw new Error('Redirect URL must be same-origin');
+    }
     const result = await createCustomerPortal({
-      customerId: row.customerId,
+      customerId: row?.customerId ?? '',
       returnUrl,
       locale: data.locale,
     });
     return { url: result.url };
   });
 
+export const getPaymentHistory = createServerFn({ method: 'GET' })
+  .middleware([authApiMiddleware])
+  .handler(async ({ context }) =>
+    getDb()
+      .select({
+        id: payment.id,
+        priceId: payment.priceId,
+        type: payment.type,
+        scene: payment.scene,
+        status: payment.status,
+        paid: payment.paid,
+        createdAt: payment.createdAt,
+      })
+      .from(payment)
+      .where(eq(payment.userId, context.userId))
+      .orderBy(desc(payment.createdAt))
+      .limit(50)
+  );
+
 export const getCurrentPlan = createServerFn({ method: 'GET' })
   .middleware([authApiMiddleware])
   .handler(async ({ context }) => {
     const { userId } = context;
     const db = getDb();
+    const [billingUser] = await db
+      .select({ customerId: user.customerId })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+    const hasCustomerId = Boolean(billingUser?.customerId);
+    // Reading account information must not initialize a payment client or
+    // require checkout secrets. Waffo uses its shared customer portal.
+    const portalRequiresCustomerId =
+      websiteConfig.payment?.provider !== 'waffo';
+    const [paymentHistory] = await db
+      .select({ id: payment.id })
+      .from(payment)
+      .where(eq(payment.userId, userId))
+      .limit(1);
+    const hasPaymentHistory = Boolean(paymentHistory);
     const plans = getAllPricePlans();
     const freePlan = plans.find((p) => p.isFree && !p.disabled) ?? null;
     const lifetimePlanIds = plans.filter((p) => p.isLifetime).map((p) => p.id);
@@ -179,7 +266,13 @@ export const getCurrentPlan = createServerFn({ method: 'GET' })
     }
 
     if (userLifetimePlan) {
-      return { currentPlan: userLifetimePlan, subscription: null };
+      return {
+        currentPlan: userLifetimePlan,
+        subscription: null,
+        hasCustomerId,
+        hasPaymentHistory,
+        portalRequiresCustomerId,
+      };
     }
     if (activeSubscription) {
       const subscriptionPlan =
@@ -189,9 +282,18 @@ export const getCurrentPlan = createServerFn({ method: 'GET' })
       return {
         currentPlan: subscriptionPlan as PricePlan | null,
         subscription: activeSubscription,
+        hasCustomerId,
+        hasPaymentHistory,
+        portalRequiresCustomerId,
       };
     }
-    return { currentPlan: freePlan as PricePlan | null, subscription: null };
+    return {
+      currentPlan: freePlan as PricePlan | null,
+      subscription: null,
+      hasCustomerId,
+      hasPaymentHistory,
+      portalRequiresCustomerId,
+    };
   });
 
 const checkCompletionSchema = z.object({ sessionId: z.string().min(1) });

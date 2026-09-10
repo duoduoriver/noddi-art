@@ -1,4 +1,6 @@
 import { getAuthErrorMessage } from '@/lib/locale';
+import { Turnstile } from '@marsidev/react-turnstile';
+import type { TurnstileInstance } from '@marsidev/react-turnstile';
 import { m } from '@/locale/paraglide/messages';
 import { Link } from '@tanstack/react-router';
 import { AuthCard } from '@/components/auth/auth-card';
@@ -18,11 +20,12 @@ import { websiteConfig } from '@/config/website';
 import { authClient } from '@/auth/client';
 import { emitAuthSessionChanged } from '@/auth/session-events';
 import { cn } from '@/lib/utils';
+import { publicEnv } from '@/env/public';
 import { DEFAULT_LOGIN_REDIRECT, Routes } from '@/lib/routes';
 import { getPathWithLocale } from '@/lib/urls';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconEye, IconEyeOff, IconLoader2 } from '@tabler/icons-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { SocialLoginButton } from './social-login-button';
@@ -48,6 +51,9 @@ export function LoginForm({
   const [success, setSuccess] = useState<string | undefined>(undefined);
   const [isPending, setIsPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string>();
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const turnstileSiteKey = publicEnv.VITE_TURNSTILE_SITE_KEY;
   const credentialLoginEnabled =
     websiteConfig.auth?.enableCredentialLogin ?? false;
   const LoginSchema = z.object({
@@ -63,6 +69,11 @@ export function LoginForm({
       ? new URLSearchParams(window.location.search).get('error')
       : null;
   const onSubmit = async (values: z.infer<typeof LoginSchema>) => {
+    if (!turnstileToken) {
+      setError('Complete bot verification before signing in.');
+      return;
+    }
+
     await authClient.signIn.email(
       {
         email: values.email,
@@ -70,6 +81,7 @@ export function LoginForm({
         callbackURL: callbackUrl,
       },
       {
+        headers: { 'x-captcha-response': turnstileToken },
         onRequest: () => {
           setIsPending(true);
           setError('');
@@ -81,6 +93,8 @@ export function LoginForm({
           onSuccess?.();
         },
         onError: (ctx) => {
+          setTurnstileToken(undefined);
+          turnstileRef.current?.reset();
           setError(getAuthErrorMessage(ctx.error));
         },
       }
@@ -167,10 +181,27 @@ export function LoginForm({
                 )}
               />
             </div>
+            {turnstileSiteKey ? (
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={turnstileSiteKey}
+                onSuccess={setTurnstileToken}
+                onExpire={() => setTurnstileToken(undefined)}
+                onError={() => {
+                  setTurnstileToken(undefined);
+                  setError('Bot verification failed. Please try again.');
+                }}
+                options={{ action: 'login', size: 'flexible' }}
+              />
+            ) : (
+              <p className="text-sm text-red-600">
+                Bot verification is not configured.
+              </p>
+            )}
             <FormError message={error || urlError || undefined} />
             <FormSuccess message={success} />
             <Button
-              disabled={isPending}
+              disabled={isPending || !turnstileToken}
               size="lg"
               type="submit"
               className="w-full flex items-center justify-center gap-2"

@@ -1,28 +1,26 @@
 import { m } from '@/locale/paraglide/messages';
 import {
-  IconBell,
   IconCreditCard,
-  IconFileUpload,
-  IconKey,
-  IconLayoutDashboard,
-  IconLock,
+  IconPalette,
   IconSettings2,
   IconShieldCheck,
-  IconUserCircle,
   IconUsers,
 } from '@tabler/icons-react';
 import { Routes } from '@/lib/routes';
 import type { MenuItemConfig } from '../types';
-import { websiteConfig } from './website';
-/**
- * Sidebar links
- */
+
 export function getSidebarLinks(): MenuItemConfig[] {
   return [
     {
-      title: m.dashboard_sidebar_dashboard(),
-      icon: IconLayoutDashboard,
-      href: Routes.Dashboard,
+      title: m.noddi_nav_my_projects(),
+      icon: IconPalette,
+      href: Routes.DashboardProjects,
+      external: false,
+    },
+    {
+      title: m.noddi_nav_credits_billing(),
+      icon: IconCreditCard,
+      href: Routes.DashboardCredits,
       external: false,
     },
     {
@@ -36,57 +34,25 @@ export function getSidebarLinks(): MenuItemConfig[] {
           href: Routes.AdminUsers,
           external: false,
         },
+        {
+          title: m.noddi_admin_generations(),
+          icon: IconPalette,
+          href: Routes.AdminGenerations,
+          external: false,
+        },
+        {
+          title: m.noddi_admin_orders(),
+          icon: IconCreditCard,
+          href: Routes.AdminOrders,
+          external: false,
+        },
       ],
     },
     {
-      title: m.dashboard_sidebar_settings(),
+      title: m.noddi_nav_account_settings(),
       icon: IconSettings2,
-      items: [
-        {
-          title: m.dashboard_sidebar_profile(),
-          icon: IconUserCircle,
-          href: Routes.SettingsProfile,
-          external: false,
-        },
-        ...(websiteConfig.payment?.enable
-          ? [
-              {
-                title: m.dashboard_sidebar_billing(),
-                icon: IconCreditCard,
-                href: Routes.SettingsBilling,
-                external: false,
-              },
-            ]
-          : []),
-        {
-          title: m.dashboard_sidebar_security(),
-          icon: IconLock,
-          href: Routes.SettingsSecurity,
-          external: false,
-        },
-        {
-          title: m.dashboard_sidebar_files(),
-          icon: IconFileUpload,
-          href: Routes.SettingsFiles,
-          external: false,
-        },
-        {
-          title: m.dashboard_sidebar_api_keys(),
-          icon: IconKey,
-          href: Routes.SettingsApiKeys,
-          external: false,
-        },
-        ...(websiteConfig.newsletter?.enable
-          ? [
-              {
-                title: m.dashboard_sidebar_notifications(),
-                icon: IconBell,
-                href: Routes.SettingsNotifications,
-                external: false,
-              },
-            ]
-          : []),
-      ],
+      href: Routes.SettingsProfile,
+      external: false,
     },
   ];
 }

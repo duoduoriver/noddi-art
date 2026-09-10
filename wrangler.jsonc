@@ -76,5 +76,27 @@
       "bucket_name": "duoduohe-tanstack",
       "binding": "BUCKET"
     }
-  ]
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "NODDI_JOBS",
+        "queue": "noddi-jobs"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "noddi-jobs",
+        "max_batch_size": 1,
+        "dead_letter_queue": "noddi-jobs-dlq"
+      },
+      {
+        "queue": "noddi-jobs-dlq",
+        "max_batch_size": 1
+      }
+    ]
+  },
+  "triggers": {
+    "crons": ["0 3 * * *"]
+  }
 }

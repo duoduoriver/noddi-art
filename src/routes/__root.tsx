@@ -6,8 +6,6 @@ import {
   Scripts,
   useRouterState,
 } from '@tanstack/react-router';
-import { AffonsoScript } from '@/components/affiliate/affonso';
-import { PromotekitScript } from '@/components/affiliate/promotekit';
 import { Analytics } from '@/components/analytics/analytics';
 import { CrispChat } from '@/components/chatbox/crisp-chat';
 import { ThemeProvider } from '@/components/theme/theme-provider';
@@ -28,6 +26,7 @@ import {
   locales,
 } from '@/lib/locale';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { SketchFrameFilter } from '@/components/noddi/sketch-frame';
 import { getAuthCookieState } from '@/api/auth-state';
 import { lazy } from 'react';
 
@@ -59,7 +58,7 @@ export const Route = createRootRouteWithContext<{
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { title: websiteConfig.metadata?.title },
         { name: 'description', content: websiteConfig.metadata?.description },
-        { name: 'theme-color', content: '#09090b' },
+        { name: 'theme-color', content: '#111111' },
         // Default OG / Twitter / canonical — pages with their own head()
         // override these with page-specific values. These ensure 404 / error
         // pages and any future route that forgets to call seo() still get
@@ -179,6 +178,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <SketchFrameFilter />
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-background focus:px-4 focus:py-2 focus:text-foreground focus:ring-2 focus:ring-primary"
@@ -194,8 +194,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <DevTools />
         <Analytics />
         <CrispChat />
-        <AffonsoScript />
-        <PromotekitScript />
         <Scripts />
       </body>
     </html>

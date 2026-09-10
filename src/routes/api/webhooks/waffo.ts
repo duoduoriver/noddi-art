@@ -39,9 +39,14 @@ export const Route = createFileRoute('/api/webhooks/waffo')({
           return Response.json({ received: true }, { status: 200 });
         } catch (err) {
           console.error('Waffo webhook error:', err);
+          const message = err instanceof Error ? err.message.toLowerCase() : '';
+          const status =
+            message.includes('signature') || message.includes('payload')
+              ? 400
+              : 500;
           return Response.json(
-            { error: 'Webhook processing failed', received: true },
-            { status: 200 }
+            { error: 'Webhook processing failed', received: false },
+            { status }
           );
         }
       },

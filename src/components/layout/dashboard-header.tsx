@@ -8,9 +8,6 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { LocaleSwitcher } from '@/components/layout/locale-switcher';
-import { ModeSwitcher } from '@/components/theme/mode-switcher';
-import { websiteConfig } from '@/config/website';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import React from 'react';
@@ -33,8 +30,6 @@ export function DashboardHeader({
   breadcrumbs,
   actions,
 }: DashboardHeaderProps) {
-  const showModeSwitch = websiteConfig.ui?.mode?.enableSwitch ?? false;
-
   return (
     <header className="flex h-(--header-height) shrink-0 items-center border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full min-w-0 items-center gap-2 px-4 lg:px-6">
@@ -77,8 +72,6 @@ export function DashboardHeader({
 
         <div className="ml-auto flex shrink-0 items-center gap-3 pl-4">
           {actions}
-          <LocaleSwitcher />
-          {showModeSwitch && <ModeSwitcher />}
         </div>
       </div>
     </header>

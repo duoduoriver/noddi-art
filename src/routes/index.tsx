@@ -20,6 +20,22 @@ export const Route = createFileRoute('/')({
       url,
       inLanguage,
     };
+    const softwareJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name,
+      description,
+      url,
+      applicationCategory: 'DesignApplication',
+      operatingSystem: 'Web',
+      featureList: [
+        'AI app icon generation',
+        'iOS Xcode AppIcon export',
+        'Android adaptive and themed icon export',
+        'macOS ICNS export',
+        'Favicon and PWA asset export',
+      ],
+    };
     const metadata = seo('/', { title, description });
     return {
       ...metadata,
@@ -27,6 +43,10 @@ export const Route = createFileRoute('/')({
         {
           type: 'application/ld+json',
           children: JSON.stringify(webSiteJsonLd),
+        },
+        {
+          type: 'application/ld+json',
+          children: JSON.stringify(softwareJsonLd),
         },
       ],
     };

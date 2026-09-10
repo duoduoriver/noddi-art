@@ -7,15 +7,15 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
+  --background: #ffffff;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.553 0.195 38.402);
-  --primary-foreground: oklch(0.98 0.016 73.684);
-  --secondary: oklch(0.967 0.001 286.375);
+  --primary: #111111;
+  --primary-foreground: #ffffff;
+  --secondary: #9b7bff;
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
@@ -24,13 +24,13 @@
   --destructive: oklch(0.58 0.22 27);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: #9b7bff;
   --chart-1: oklch(0.837 0.128 66.29);
   --chart-2: oklch(0.705 0.213 47.604);
   --chart-3: oklch(0.646 0.222 41.116);
   --chart-4: oklch(0.553 0.195 38.402);
   --chart-5: oklch(0.47 0.157 37.304);
-  --radius: 0.625rem;
+  --radius: 0.25rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.646 0.222 41.116);
@@ -76,7 +76,8 @@
 }
 
 @theme inline {
-  --font-brand: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-brand: "Nunito", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
+  --font-hand: "Handlee", "Comic Sans MS", cursive;
   --font-sans: var(--font-brand);
   --font-custom: var(--font-brand);
   --border-width: 1px;
@@ -121,41 +122,33 @@
 }
 
 @layer base {
-  /*
-   * Bricolage Grotesque is loaded with `font-display: optional`:
-   *   - Browser uses the fallback system font immediately (no blocking).
-   *   - Webfont is downloaded in the background with LOW priority.
-   *   - If it arrives within the extremely short block period (~100 ms)
-   *     it is used; otherwise the browser NEVER swaps, eliminating CLS
-   *     from font changes on the initial page load.
-   *   - Subsequent visits read the font from cache, so users do see the
-   *     brand font almost every time after the first load.
-   *
-   * WOFF2 files are self-hosted from /public/fonts/ (copied from
-   * node_modules/@fontsource/bricolage-grotesque/files). Only weights
-   * actually used on-site are shipped. Weight 500 is intentionally omitted
-   * — browsers synthesize it from 400 via `font-synthesis`.
-   */
   @font-face {
-    font-family: "Bricolage Grotesque";
+    font-family: "Handlee";
     font-style: normal;
     font-weight: 400;
-    font-display: optional;
-    src: url("/fonts/bricolage-400.woff2") format("woff2");
+    font-display: swap;
+    src: url("/fonts/handlee-400.woff2") format("woff2");
   }
   @font-face {
-    font-family: "Bricolage Grotesque";
+    font-family: "Nunito";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/nunito-400.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: "Nunito";
     font-style: normal;
     font-weight: 600;
-    font-display: optional;
-    src: url("/fonts/bricolage-600.woff2") format("woff2");
+    font-display: swap;
+    src: url("/fonts/nunito-600.woff2") format("woff2");
   }
   @font-face {
-    font-family: "Bricolage Grotesque";
+    font-family: "Nunito";
     font-style: normal;
     font-weight: 700;
-    font-display: optional;
-    src: url("/fonts/bricolage-700.woff2") format("woff2");
+    font-display: swap;
+    src: url("/fonts/nunito-700.woff2") format("woff2");
   }
 
   * {
@@ -196,4 +189,87 @@ html.theme-transitioning::view-transition-new(root) {
   html.theme-transitioning::view-transition-new(root) {
     animation: none;
   }
+}
+
+/* noddi paper-and-ink surfaces: the SVG filter keeps the border hand drawn
+ * without changing the content box or intercepting pointer events. */
+.sketch-frame {
+  --frame-color: #111111;
+  --frame-width: 3px;
+  --frame-radius: 16px;
+  position: relative;
+}
+
+.sketch-frame-border {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.sketch-frame-border rect {
+  fill: none;
+  stroke: var(--frame-color);
+  stroke-width: var(--frame-width);
+  stroke-linejoin: round;
+  x: 8px;
+  y: 8px;
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
+  rx: var(--frame-radius);
+  ry: var(--frame-radius);
+  filter: url(#noddi-sketch-frame);
+}
+
+/* A self-hosted mask keeps the reference brush silhouette while preserving
+ * Base UI's focus, disabled, and rendered-link semantics. */
+.brush-button {
+  --brush: #111111;
+  height: auto;
+  min-height: 55px;
+  /* The brush silhouette carries more visual mass below its centre. */
+  padding: 1em 2.1em 0.7em;
+  border: 0;
+  background-color: var(--brush);
+  -webkit-mask-image: url("/brush-mask.svg");
+  mask-image: url("/brush-mask.svg");
+  -webkit-mask-mode: luminance;
+  mask-mode: luminance;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+.brush-highlight {
+  -webkit-mask-image: url("/brush-mask.svg");
+  mask-image: url("/brush-mask.svg");
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+.footer-background .text-muted-foreground {
+  color: #ffffff;
+}
+
+.footer-background a:hover {
+  color: #c6ff5b;
+}
+
+.brush-button:hover:not(:disabled) {
+  background-color: #9b7bff;
+}
+
+.brush-button:active:not(:disabled) {
+  background-color: #111111;
+  color: #c6ff5b;
 }

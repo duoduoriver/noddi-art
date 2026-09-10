@@ -1,5 +1,3 @@
-import { customAlphabet } from "nanoid";
-
 const prefixes: Record<string, unknown> = {};
 
 interface GenerateIdOptions {
@@ -18,10 +16,9 @@ export function generateId(
     typeof prefixOrOptions === "object" ? undefined : prefixOrOptions;
 
   const { length = 12, separator = "_" } = finalOptions;
-  const id = customAlphabet(
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
-    length,
-  )();
+  const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  const random = crypto.getRandomValues(new Uint32Array(length));
+  const id = Array.from(random, (value) => alphabet[value % alphabet.length]).join("");
 
   return prefix && prefix in prefixes
     ? `${prefixes[prefix]}${separator}${id}`

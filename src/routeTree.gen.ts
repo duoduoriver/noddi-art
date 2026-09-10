@@ -13,13 +13,13 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ManifestDotjsonRouteImport } from './routes/manifest[.]json'
+import { Route as GenerateRouteImport } from './routes/generate'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
-import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as SettingsSecurityRouteImport } from './routes/settings/security'
 import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
@@ -28,7 +28,8 @@ import { Route as SettingsNotificationsRouteImport } from './routes/settings/not
 import { Route as SettingsFilesRouteImport } from './routes/settings/files'
 import { Route as SettingsBillingRouteImport } from './routes/settings/billing'
 import { Route as SettingsApikeysRouteImport } from './routes/settings/apikeys'
-import { Route as BlogSlugRouteImport } from './routes/blog/$slug'
+import { Route as DashboardHistoryRouteImport } from './routes/dashboard/history'
+import { Route as DashboardCreditsRouteImport } from './routes/dashboard/credits'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
@@ -36,24 +37,39 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-pas
 import { Route as AuthErrorRouteImport } from './routes/auth/error'
 import { Route as ApiPingRouteImport } from './routes/api/ping'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminOrdersRouteImport } from './routes/admin/orders'
+import { Route as AdminGenerationsRouteImport } from './routes/admin/generations'
 import { Route as testsTestErrorRouteImport } from './routes/(tests)/test-error'
 import { Route as testsTest404RouteImport } from './routes/(tests)/test-404'
-import { Route as pagesWaitlistRouteImport } from './routes/(pages)/waitlist'
-import { Route as pagesRoadmapRouteImport } from './routes/(pages)/roadmap'
+import { Route as pagesXcodeAppiconsetGuideRouteImport } from './routes/(pages)/xcode-appiconset-guide'
+import { Route as pagesXcodeAppiconsetGeneratorRouteImport } from './routes/(pages)/xcode-appiconset-generator'
+import { Route as pagesPwaIconSizesRouteImport } from './routes/(pages)/pwa-icon-sizes'
 import { Route as pagesPricingRouteImport } from './routes/(pages)/pricing'
-import { Route as pagesContactRouteImport } from './routes/(pages)/contact'
-import { Route as pagesChangelogRouteImport } from './routes/(pages)/changelog'
-import { Route as pagesAiRouteImport } from './routes/(pages)/ai'
-import { Route as pagesAboutRouteImport } from './routes/(pages)/about'
+import { Route as pagesIosAppIconSizesRouteImport } from './routes/(pages)/ios-app-icon-sizes'
+import { Route as pagesIosAppIconGeneratorRouteImport } from './routes/(pages)/ios-app-icon-generator'
+import { Route as pagesGuidesRouteImport } from './routes/(pages)/guides'
+import { Route as pagesFaviconSizesRouteImport } from './routes/(pages)/favicon-sizes'
+import { Route as pagesFaviconGeneratorRouteImport } from './routes/(pages)/favicon-generator'
+import { Route as pagesAppIconResizerRouteImport } from './routes/(pages)/app-icon-resizer'
+import { Route as pagesAndroidMipmapGeneratorRouteImport } from './routes/(pages)/android-mipmap-generator'
+import { Route as pagesAndroidAppIconSizesRouteImport } from './routes/(pages)/android-app-icon-sizes'
+import { Route as pagesAndroidAppIconGeneratorRouteImport } from './routes/(pages)/android-app-icon-generator'
+import { Route as pagesAndroidAdaptiveIconSafeZoneRouteImport } from './routes/(pages)/android-adaptive-icon-safe-zone'
 import { Route as legalsTermsRouteImport } from './routes/(legals)/terms'
 import { Route as legalsPrivacyRouteImport } from './routes/(legals)/privacy'
 import { Route as legalsCookieRouteImport } from './routes/(legals)/cookie'
+import { Route as DashboardProjectsIndexRouteImport } from './routes/dashboard/projects/index'
+import { Route as DashboardProjectsProjectIdRouteImport } from './routes/dashboard/projects/$projectId'
 import { Route as ApiWebhooksWaffoRouteImport } from './routes/api/webhooks/waffo'
 import { Route as ApiWebhooksStripeRouteImport } from './routes/api/webhooks/stripe'
 import { Route as ApiWebhooksCreemRouteImport } from './routes/api/webhooks/creem'
 import { Route as ApiStorageFileRouteImport } from './routes/api/storage/file'
+import { Route as ApiExportsExportIdRouteImport } from './routes/api/exports/$exportId'
 import { Route as ApiE2eUsersRouteImport } from './routes/api/e2e/users'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as pagesModelsSunburstVsFlareRouteImport } from './routes/(pages)/models/sunburst-vs-flare'
+import { Route as pagesModelsGptImage25SunburstAppIconGeneratorRouteImport } from './routes/(pages)/models/gpt-image-2-5-sunburst-app-icon-generator'
+import { Route as pagesModelsGptImage25SunburstRouteImport } from './routes/(pages)/models/gpt-image-2-5-sunburst'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -73,6 +89,11 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
 const ManifestDotjsonRoute = ManifestDotjsonRouteImport.update({
   id: '/manifest.json',
   path: '/manifest.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GenerateRoute = GenerateRouteImport.update({
+  id: '/generate',
+  path: '/generate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -104,11 +125,6 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => DashboardRoute,
-} as any)
-const BlogIndexRoute = BlogIndexRouteImport.update({
-  id: '/blog/',
-  path: '/blog/',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -150,10 +166,15 @@ const SettingsApikeysRoute = SettingsApikeysRouteImport.update({
   path: '/apikeys',
   getParentRoute: () => SettingsRoute,
 } as any)
-const BlogSlugRoute = BlogSlugRouteImport.update({
-  id: '/blog/$slug',
-  path: '/blog/$slug',
-  getParentRoute: () => rootRouteImport,
+const DashboardHistoryRoute = DashboardHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCreditsRoute = DashboardCreditsRouteImport.update({
+  id: '/credits',
+  path: '/credits',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -190,6 +211,16 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminOrdersRoute = AdminOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminGenerationsRoute = AdminGenerationsRouteImport.update({
+  id: '/generations',
+  path: '/generations',
+  getParentRoute: () => AdminRoute,
+} as any)
 const testsTestErrorRoute = testsTestErrorRouteImport.update({
   id: '/(tests)/test-error',
   path: '/test-error',
@@ -200,14 +231,21 @@ const testsTest404Route = testsTest404RouteImport.update({
   path: '/test-404',
   getParentRoute: () => rootRouteImport,
 } as any)
-const pagesWaitlistRoute = pagesWaitlistRouteImport.update({
-  id: '/(pages)/waitlist',
-  path: '/waitlist',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const pagesRoadmapRoute = pagesRoadmapRouteImport.update({
-  id: '/(pages)/roadmap',
-  path: '/roadmap',
+const pagesXcodeAppiconsetGuideRoute =
+  pagesXcodeAppiconsetGuideRouteImport.update({
+    id: '/(pages)/xcode-appiconset-guide',
+    path: '/xcode-appiconset-guide',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const pagesXcodeAppiconsetGeneratorRoute =
+  pagesXcodeAppiconsetGeneratorRouteImport.update({
+    id: '/(pages)/xcode-appiconset-generator',
+    path: '/xcode-appiconset-generator',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const pagesPwaIconSizesRoute = pagesPwaIconSizesRouteImport.update({
+  id: '/(pages)/pwa-icon-sizes',
+  path: '/pwa-icon-sizes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const pagesPricingRoute = pagesPricingRouteImport.update({
@@ -215,26 +253,61 @@ const pagesPricingRoute = pagesPricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
-const pagesContactRoute = pagesContactRouteImport.update({
-  id: '/(pages)/contact',
-  path: '/contact',
+const pagesIosAppIconSizesRoute = pagesIosAppIconSizesRouteImport.update({
+  id: '/(pages)/ios-app-icon-sizes',
+  path: '/ios-app-icon-sizes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const pagesChangelogRoute = pagesChangelogRouteImport.update({
-  id: '/(pages)/changelog',
-  path: '/changelog',
+const pagesIosAppIconGeneratorRoute =
+  pagesIosAppIconGeneratorRouteImport.update({
+    id: '/(pages)/ios-app-icon-generator',
+    path: '/ios-app-icon-generator',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const pagesGuidesRoute = pagesGuidesRouteImport.update({
+  id: '/(pages)/guides',
+  path: '/guides',
   getParentRoute: () => rootRouteImport,
 } as any)
-const pagesAiRoute = pagesAiRouteImport.update({
-  id: '/(pages)/ai',
-  path: '/ai',
+const pagesFaviconSizesRoute = pagesFaviconSizesRouteImport.update({
+  id: '/(pages)/favicon-sizes',
+  path: '/favicon-sizes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const pagesAboutRoute = pagesAboutRouteImport.update({
-  id: '/(pages)/about',
-  path: '/about',
+const pagesFaviconGeneratorRoute = pagesFaviconGeneratorRouteImport.update({
+  id: '/(pages)/favicon-generator',
+  path: '/favicon-generator',
   getParentRoute: () => rootRouteImport,
 } as any)
+const pagesAppIconResizerRoute = pagesAppIconResizerRouteImport.update({
+  id: '/(pages)/app-icon-resizer',
+  path: '/app-icon-resizer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const pagesAndroidMipmapGeneratorRoute =
+  pagesAndroidMipmapGeneratorRouteImport.update({
+    id: '/(pages)/android-mipmap-generator',
+    path: '/android-mipmap-generator',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const pagesAndroidAppIconSizesRoute =
+  pagesAndroidAppIconSizesRouteImport.update({
+    id: '/(pages)/android-app-icon-sizes',
+    path: '/android-app-icon-sizes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const pagesAndroidAppIconGeneratorRoute =
+  pagesAndroidAppIconGeneratorRouteImport.update({
+    id: '/(pages)/android-app-icon-generator',
+    path: '/android-app-icon-generator',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const pagesAndroidAdaptiveIconSafeZoneRoute =
+  pagesAndroidAdaptiveIconSafeZoneRouteImport.update({
+    id: '/(pages)/android-adaptive-icon-safe-zone',
+    path: '/android-adaptive-icon-safe-zone',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const legalsTermsRoute = legalsTermsRouteImport.update({
   id: '/(legals)/terms',
   path: '/terms',
@@ -250,6 +323,17 @@ const legalsCookieRoute = legalsCookieRouteImport.update({
   path: '/cookie',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardProjectsIndexRoute = DashboardProjectsIndexRouteImport.update({
+  id: '/projects/',
+  path: '/projects/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardProjectsProjectIdRoute =
+  DashboardProjectsProjectIdRouteImport.update({
+    id: '/projects/$projectId',
+    path: '/projects/$projectId',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 const ApiWebhooksWaffoRoute = ApiWebhooksWaffoRouteImport.update({
   id: '/api/webhooks/waffo',
   path: '/api/webhooks/waffo',
@@ -270,6 +354,11 @@ const ApiStorageFileRoute = ApiStorageFileRouteImport.update({
   path: '/api/storage/file',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiExportsExportIdRoute = ApiExportsExportIdRouteImport.update({
+  id: '/api/exports/$exportId',
+  path: '/api/exports/$exportId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiE2eUsersRoute = ApiE2eUsersRouteImport.update({
   id: '/api/e2e/users',
   path: '/api/e2e/users',
@@ -280,12 +369,31 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const pagesModelsSunburstVsFlareRoute =
+  pagesModelsSunburstVsFlareRouteImport.update({
+    id: '/(pages)/models/sunburst-vs-flare',
+    path: '/models/sunburst-vs-flare',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const pagesModelsGptImage25SunburstAppIconGeneratorRoute =
+  pagesModelsGptImage25SunburstAppIconGeneratorRouteImport.update({
+    id: '/(pages)/models/gpt-image-2-5-sunburst-app-icon-generator',
+    path: '/models/gpt-image-2-5-sunburst-app-icon-generator',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const pagesModelsGptImage25SunburstRoute =
+  pagesModelsGptImage25SunburstRouteImport.update({
+    id: '/(pages)/models/gpt-image-2-5-sunburst',
+    path: '/models/gpt-image-2-5-sunburst',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
+  '/generate': typeof GenerateRoute
   '/manifest.json': typeof ManifestDotjsonRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/settings': typeof SettingsRouteWithChildren
@@ -293,15 +401,24 @@ export interface FileRoutesByFullPath {
   '/cookie': typeof legalsCookieRoute
   '/privacy': typeof legalsPrivacyRoute
   '/terms': typeof legalsTermsRoute
-  '/about': typeof pagesAboutRoute
-  '/ai': typeof pagesAiRoute
-  '/changelog': typeof pagesChangelogRoute
-  '/contact': typeof pagesContactRoute
+  '/android-adaptive-icon-safe-zone': typeof pagesAndroidAdaptiveIconSafeZoneRoute
+  '/android-app-icon-generator': typeof pagesAndroidAppIconGeneratorRoute
+  '/android-app-icon-sizes': typeof pagesAndroidAppIconSizesRoute
+  '/android-mipmap-generator': typeof pagesAndroidMipmapGeneratorRoute
+  '/app-icon-resizer': typeof pagesAppIconResizerRoute
+  '/favicon-generator': typeof pagesFaviconGeneratorRoute
+  '/favicon-sizes': typeof pagesFaviconSizesRoute
+  '/guides': typeof pagesGuidesRoute
+  '/ios-app-icon-generator': typeof pagesIosAppIconGeneratorRoute
+  '/ios-app-icon-sizes': typeof pagesIosAppIconSizesRoute
   '/pricing': typeof pagesPricingRoute
-  '/roadmap': typeof pagesRoadmapRoute
-  '/waitlist': typeof pagesWaitlistRoute
+  '/pwa-icon-sizes': typeof pagesPwaIconSizesRoute
+  '/xcode-appiconset-generator': typeof pagesXcodeAppiconsetGeneratorRoute
+  '/xcode-appiconset-guide': typeof pagesXcodeAppiconsetGuideRoute
   '/test-404': typeof testsTest404Route
   '/test-error': typeof testsTestErrorRoute
+  '/admin/generations': typeof AdminGenerationsRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/ping': typeof ApiPingRoute
   '/auth/error': typeof AuthErrorRoute
@@ -309,7 +426,8 @@ export interface FileRoutesByFullPath {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
-  '/blog/$slug': typeof BlogSlugRoute
+  '/dashboard/credits': typeof DashboardCreditsRoute
+  '/dashboard/history': typeof DashboardHistoryRoute
   '/settings/apikeys': typeof SettingsApikeysRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/files': typeof SettingsFilesRoute
@@ -318,34 +436,49 @@ export interface FileRoutesByFullPath {
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin/': typeof AdminIndexRoute
-  '/blog/': typeof BlogIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/settings/': typeof SettingsIndexRoute
+  '/models/gpt-image-2-5-sunburst': typeof pagesModelsGptImage25SunburstRoute
+  '/models/gpt-image-2-5-sunburst-app-icon-generator': typeof pagesModelsGptImage25SunburstAppIconGeneratorRoute
+  '/models/sunburst-vs-flare': typeof pagesModelsSunburstVsFlareRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/e2e/users': typeof ApiE2eUsersRoute
+  '/api/exports/$exportId': typeof ApiExportsExportIdRoute
   '/api/storage/file': typeof ApiStorageFileRoute
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
   '/api/webhooks/waffo': typeof ApiWebhooksWaffoRoute
+  '/dashboard/projects/$projectId': typeof DashboardProjectsProjectIdRoute
+  '/dashboard/projects/': typeof DashboardProjectsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/generate': typeof GenerateRoute
   '/manifest.json': typeof ManifestDotjsonRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/cookie': typeof legalsCookieRoute
   '/privacy': typeof legalsPrivacyRoute
   '/terms': typeof legalsTermsRoute
-  '/about': typeof pagesAboutRoute
-  '/ai': typeof pagesAiRoute
-  '/changelog': typeof pagesChangelogRoute
-  '/contact': typeof pagesContactRoute
+  '/android-adaptive-icon-safe-zone': typeof pagesAndroidAdaptiveIconSafeZoneRoute
+  '/android-app-icon-generator': typeof pagesAndroidAppIconGeneratorRoute
+  '/android-app-icon-sizes': typeof pagesAndroidAppIconSizesRoute
+  '/android-mipmap-generator': typeof pagesAndroidMipmapGeneratorRoute
+  '/app-icon-resizer': typeof pagesAppIconResizerRoute
+  '/favicon-generator': typeof pagesFaviconGeneratorRoute
+  '/favicon-sizes': typeof pagesFaviconSizesRoute
+  '/guides': typeof pagesGuidesRoute
+  '/ios-app-icon-generator': typeof pagesIosAppIconGeneratorRoute
+  '/ios-app-icon-sizes': typeof pagesIosAppIconSizesRoute
   '/pricing': typeof pagesPricingRoute
-  '/roadmap': typeof pagesRoadmapRoute
-  '/waitlist': typeof pagesWaitlistRoute
+  '/pwa-icon-sizes': typeof pagesPwaIconSizesRoute
+  '/xcode-appiconset-generator': typeof pagesXcodeAppiconsetGeneratorRoute
+  '/xcode-appiconset-guide': typeof pagesXcodeAppiconsetGuideRoute
   '/test-404': typeof testsTest404Route
   '/test-error': typeof testsTestErrorRoute
+  '/admin/generations': typeof AdminGenerationsRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/ping': typeof ApiPingRoute
   '/auth/error': typeof AuthErrorRoute
@@ -353,7 +486,8 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
-  '/blog/$slug': typeof BlogSlugRoute
+  '/dashboard/credits': typeof DashboardCreditsRoute
+  '/dashboard/history': typeof DashboardHistoryRoute
   '/settings/apikeys': typeof SettingsApikeysRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/files': typeof SettingsFilesRoute
@@ -362,15 +496,20 @@ export interface FileRoutesByTo {
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin': typeof AdminIndexRoute
-  '/blog': typeof BlogIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/settings': typeof SettingsIndexRoute
+  '/models/gpt-image-2-5-sunburst': typeof pagesModelsGptImage25SunburstRoute
+  '/models/gpt-image-2-5-sunburst-app-icon-generator': typeof pagesModelsGptImage25SunburstAppIconGeneratorRoute
+  '/models/sunburst-vs-flare': typeof pagesModelsSunburstVsFlareRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/e2e/users': typeof ApiE2eUsersRoute
+  '/api/exports/$exportId': typeof ApiExportsExportIdRoute
   '/api/storage/file': typeof ApiStorageFileRoute
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
   '/api/webhooks/waffo': typeof ApiWebhooksWaffoRoute
+  '/dashboard/projects/$projectId': typeof DashboardProjectsProjectIdRoute
+  '/dashboard/projects': typeof DashboardProjectsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -378,6 +517,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
+  '/generate': typeof GenerateRoute
   '/manifest.json': typeof ManifestDotjsonRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/settings': typeof SettingsRouteWithChildren
@@ -385,15 +525,24 @@ export interface FileRoutesById {
   '/(legals)/cookie': typeof legalsCookieRoute
   '/(legals)/privacy': typeof legalsPrivacyRoute
   '/(legals)/terms': typeof legalsTermsRoute
-  '/(pages)/about': typeof pagesAboutRoute
-  '/(pages)/ai': typeof pagesAiRoute
-  '/(pages)/changelog': typeof pagesChangelogRoute
-  '/(pages)/contact': typeof pagesContactRoute
+  '/(pages)/android-adaptive-icon-safe-zone': typeof pagesAndroidAdaptiveIconSafeZoneRoute
+  '/(pages)/android-app-icon-generator': typeof pagesAndroidAppIconGeneratorRoute
+  '/(pages)/android-app-icon-sizes': typeof pagesAndroidAppIconSizesRoute
+  '/(pages)/android-mipmap-generator': typeof pagesAndroidMipmapGeneratorRoute
+  '/(pages)/app-icon-resizer': typeof pagesAppIconResizerRoute
+  '/(pages)/favicon-generator': typeof pagesFaviconGeneratorRoute
+  '/(pages)/favicon-sizes': typeof pagesFaviconSizesRoute
+  '/(pages)/guides': typeof pagesGuidesRoute
+  '/(pages)/ios-app-icon-generator': typeof pagesIosAppIconGeneratorRoute
+  '/(pages)/ios-app-icon-sizes': typeof pagesIosAppIconSizesRoute
   '/(pages)/pricing': typeof pagesPricingRoute
-  '/(pages)/roadmap': typeof pagesRoadmapRoute
-  '/(pages)/waitlist': typeof pagesWaitlistRoute
+  '/(pages)/pwa-icon-sizes': typeof pagesPwaIconSizesRoute
+  '/(pages)/xcode-appiconset-generator': typeof pagesXcodeAppiconsetGeneratorRoute
+  '/(pages)/xcode-appiconset-guide': typeof pagesXcodeAppiconsetGuideRoute
   '/(tests)/test-404': typeof testsTest404Route
   '/(tests)/test-error': typeof testsTestErrorRoute
+  '/admin/generations': typeof AdminGenerationsRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/ping': typeof ApiPingRoute
   '/auth/error': typeof AuthErrorRoute
@@ -401,7 +550,8 @@ export interface FileRoutesById {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
-  '/blog/$slug': typeof BlogSlugRoute
+  '/dashboard/credits': typeof DashboardCreditsRoute
+  '/dashboard/history': typeof DashboardHistoryRoute
   '/settings/apikeys': typeof SettingsApikeysRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/files': typeof SettingsFilesRoute
@@ -410,15 +560,20 @@ export interface FileRoutesById {
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin/': typeof AdminIndexRoute
-  '/blog/': typeof BlogIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/settings/': typeof SettingsIndexRoute
+  '/(pages)/models/gpt-image-2-5-sunburst': typeof pagesModelsGptImage25SunburstRoute
+  '/(pages)/models/gpt-image-2-5-sunburst-app-icon-generator': typeof pagesModelsGptImage25SunburstAppIconGeneratorRoute
+  '/(pages)/models/sunburst-vs-flare': typeof pagesModelsSunburstVsFlareRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/e2e/users': typeof ApiE2eUsersRoute
+  '/api/exports/$exportId': typeof ApiExportsExportIdRoute
   '/api/storage/file': typeof ApiStorageFileRoute
   '/api/webhooks/creem': typeof ApiWebhooksCreemRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
   '/api/webhooks/waffo': typeof ApiWebhooksWaffoRoute
+  '/dashboard/projects/$projectId': typeof DashboardProjectsProjectIdRoute
+  '/dashboard/projects/': typeof DashboardProjectsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -427,6 +582,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/dashboard'
+    | '/generate'
     | '/manifest.json'
     | '/robots.txt'
     | '/settings'
@@ -434,15 +590,24 @@ export interface FileRouteTypes {
     | '/cookie'
     | '/privacy'
     | '/terms'
-    | '/about'
-    | '/ai'
-    | '/changelog'
-    | '/contact'
+    | '/android-adaptive-icon-safe-zone'
+    | '/android-app-icon-generator'
+    | '/android-app-icon-sizes'
+    | '/android-mipmap-generator'
+    | '/app-icon-resizer'
+    | '/favicon-generator'
+    | '/favicon-sizes'
+    | '/guides'
+    | '/ios-app-icon-generator'
+    | '/ios-app-icon-sizes'
     | '/pricing'
-    | '/roadmap'
-    | '/waitlist'
+    | '/pwa-icon-sizes'
+    | '/xcode-appiconset-generator'
+    | '/xcode-appiconset-guide'
     | '/test-404'
     | '/test-error'
+    | '/admin/generations'
+    | '/admin/orders'
     | '/admin/users'
     | '/api/ping'
     | '/auth/error'
@@ -450,7 +615,8 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/reset-password'
-    | '/blog/$slug'
+    | '/dashboard/credits'
+    | '/dashboard/history'
     | '/settings/apikeys'
     | '/settings/billing'
     | '/settings/files'
@@ -459,34 +625,49 @@ export interface FileRouteTypes {
     | '/settings/profile'
     | '/settings/security'
     | '/admin/'
-    | '/blog/'
     | '/dashboard/'
     | '/settings/'
+    | '/models/gpt-image-2-5-sunburst'
+    | '/models/gpt-image-2-5-sunburst-app-icon-generator'
+    | '/models/sunburst-vs-flare'
     | '/api/auth/$'
     | '/api/e2e/users'
+    | '/api/exports/$exportId'
     | '/api/storage/file'
     | '/api/webhooks/creem'
     | '/api/webhooks/stripe'
     | '/api/webhooks/waffo'
+    | '/dashboard/projects/$projectId'
+    | '/dashboard/projects/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/generate'
     | '/manifest.json'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/cookie'
     | '/privacy'
     | '/terms'
-    | '/about'
-    | '/ai'
-    | '/changelog'
-    | '/contact'
+    | '/android-adaptive-icon-safe-zone'
+    | '/android-app-icon-generator'
+    | '/android-app-icon-sizes'
+    | '/android-mipmap-generator'
+    | '/app-icon-resizer'
+    | '/favicon-generator'
+    | '/favicon-sizes'
+    | '/guides'
+    | '/ios-app-icon-generator'
+    | '/ios-app-icon-sizes'
     | '/pricing'
-    | '/roadmap'
-    | '/waitlist'
+    | '/pwa-icon-sizes'
+    | '/xcode-appiconset-generator'
+    | '/xcode-appiconset-guide'
     | '/test-404'
     | '/test-error'
+    | '/admin/generations'
+    | '/admin/orders'
     | '/admin/users'
     | '/api/ping'
     | '/auth/error'
@@ -494,7 +675,8 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/reset-password'
-    | '/blog/$slug'
+    | '/dashboard/credits'
+    | '/dashboard/history'
     | '/settings/apikeys'
     | '/settings/billing'
     | '/settings/files'
@@ -503,21 +685,27 @@ export interface FileRouteTypes {
     | '/settings/profile'
     | '/settings/security'
     | '/admin'
-    | '/blog'
     | '/dashboard'
     | '/settings'
+    | '/models/gpt-image-2-5-sunburst'
+    | '/models/gpt-image-2-5-sunburst-app-icon-generator'
+    | '/models/sunburst-vs-flare'
     | '/api/auth/$'
     | '/api/e2e/users'
+    | '/api/exports/$exportId'
     | '/api/storage/file'
     | '/api/webhooks/creem'
     | '/api/webhooks/stripe'
     | '/api/webhooks/waffo'
+    | '/dashboard/projects/$projectId'
+    | '/dashboard/projects'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/auth'
     | '/dashboard'
+    | '/generate'
     | '/manifest.json'
     | '/robots.txt'
     | '/settings'
@@ -525,15 +713,24 @@ export interface FileRouteTypes {
     | '/(legals)/cookie'
     | '/(legals)/privacy'
     | '/(legals)/terms'
-    | '/(pages)/about'
-    | '/(pages)/ai'
-    | '/(pages)/changelog'
-    | '/(pages)/contact'
+    | '/(pages)/android-adaptive-icon-safe-zone'
+    | '/(pages)/android-app-icon-generator'
+    | '/(pages)/android-app-icon-sizes'
+    | '/(pages)/android-mipmap-generator'
+    | '/(pages)/app-icon-resizer'
+    | '/(pages)/favicon-generator'
+    | '/(pages)/favicon-sizes'
+    | '/(pages)/guides'
+    | '/(pages)/ios-app-icon-generator'
+    | '/(pages)/ios-app-icon-sizes'
     | '/(pages)/pricing'
-    | '/(pages)/roadmap'
-    | '/(pages)/waitlist'
+    | '/(pages)/pwa-icon-sizes'
+    | '/(pages)/xcode-appiconset-generator'
+    | '/(pages)/xcode-appiconset-guide'
     | '/(tests)/test-404'
     | '/(tests)/test-error'
+    | '/admin/generations'
+    | '/admin/orders'
     | '/admin/users'
     | '/api/ping'
     | '/auth/error'
@@ -541,7 +738,8 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/reset-password'
-    | '/blog/$slug'
+    | '/dashboard/credits'
+    | '/dashboard/history'
     | '/settings/apikeys'
     | '/settings/billing'
     | '/settings/files'
@@ -550,15 +748,20 @@ export interface FileRouteTypes {
     | '/settings/profile'
     | '/settings/security'
     | '/admin/'
-    | '/blog/'
     | '/dashboard/'
     | '/settings/'
+    | '/(pages)/models/gpt-image-2-5-sunburst'
+    | '/(pages)/models/gpt-image-2-5-sunburst-app-icon-generator'
+    | '/(pages)/models/sunburst-vs-flare'
     | '/api/auth/$'
     | '/api/e2e/users'
+    | '/api/exports/$exportId'
     | '/api/storage/file'
     | '/api/webhooks/creem'
     | '/api/webhooks/stripe'
     | '/api/webhooks/waffo'
+    | '/dashboard/projects/$projectId'
+    | '/dashboard/projects/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -566,6 +769,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   DashboardRoute: typeof DashboardRouteWithChildren
+  GenerateRoute: typeof GenerateRoute
   ManifestDotjsonRoute: typeof ManifestDotjsonRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SettingsRoute: typeof SettingsRouteWithChildren
@@ -573,20 +777,29 @@ export interface RootRouteChildren {
   legalsCookieRoute: typeof legalsCookieRoute
   legalsPrivacyRoute: typeof legalsPrivacyRoute
   legalsTermsRoute: typeof legalsTermsRoute
-  pagesAboutRoute: typeof pagesAboutRoute
-  pagesAiRoute: typeof pagesAiRoute
-  pagesChangelogRoute: typeof pagesChangelogRoute
-  pagesContactRoute: typeof pagesContactRoute
+  pagesAndroidAdaptiveIconSafeZoneRoute: typeof pagesAndroidAdaptiveIconSafeZoneRoute
+  pagesAndroidAppIconGeneratorRoute: typeof pagesAndroidAppIconGeneratorRoute
+  pagesAndroidAppIconSizesRoute: typeof pagesAndroidAppIconSizesRoute
+  pagesAndroidMipmapGeneratorRoute: typeof pagesAndroidMipmapGeneratorRoute
+  pagesAppIconResizerRoute: typeof pagesAppIconResizerRoute
+  pagesFaviconGeneratorRoute: typeof pagesFaviconGeneratorRoute
+  pagesFaviconSizesRoute: typeof pagesFaviconSizesRoute
+  pagesGuidesRoute: typeof pagesGuidesRoute
+  pagesIosAppIconGeneratorRoute: typeof pagesIosAppIconGeneratorRoute
+  pagesIosAppIconSizesRoute: typeof pagesIosAppIconSizesRoute
   pagesPricingRoute: typeof pagesPricingRoute
-  pagesRoadmapRoute: typeof pagesRoadmapRoute
-  pagesWaitlistRoute: typeof pagesWaitlistRoute
+  pagesPwaIconSizesRoute: typeof pagesPwaIconSizesRoute
+  pagesXcodeAppiconsetGeneratorRoute: typeof pagesXcodeAppiconsetGeneratorRoute
+  pagesXcodeAppiconsetGuideRoute: typeof pagesXcodeAppiconsetGuideRoute
   testsTest404Route: typeof testsTest404Route
   testsTestErrorRoute: typeof testsTestErrorRoute
   ApiPingRoute: typeof ApiPingRoute
-  BlogSlugRoute: typeof BlogSlugRoute
-  BlogIndexRoute: typeof BlogIndexRoute
+  pagesModelsGptImage25SunburstRoute: typeof pagesModelsGptImage25SunburstRoute
+  pagesModelsGptImage25SunburstAppIconGeneratorRoute: typeof pagesModelsGptImage25SunburstAppIconGeneratorRoute
+  pagesModelsSunburstVsFlareRoute: typeof pagesModelsSunburstVsFlareRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiE2eUsersRoute: typeof ApiE2eUsersRoute
+  ApiExportsExportIdRoute: typeof ApiExportsExportIdRoute
   ApiStorageFileRoute: typeof ApiStorageFileRoute
   ApiWebhooksCreemRoute: typeof ApiWebhooksCreemRoute
   ApiWebhooksStripeRoute: typeof ApiWebhooksStripeRoute
@@ -621,6 +834,13 @@ declare module '@tanstack/react-router' {
       path: '/manifest.json'
       fullPath: '/manifest.json'
       preLoaderRoute: typeof ManifestDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/generate': {
+      id: '/generate'
+      path: '/generate'
+      fullPath: '/generate'
+      preLoaderRoute: typeof GenerateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -664,13 +884,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/'
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
-    }
-    '/blog/': {
-      id: '/blog/'
-      path: '/blog'
-      fullPath: '/blog/'
-      preLoaderRoute: typeof BlogIndexRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/admin/': {
       id: '/admin/'
@@ -728,12 +941,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsApikeysRouteImport
       parentRoute: typeof SettingsRoute
     }
-    '/blog/$slug': {
-      id: '/blog/$slug'
-      path: '/blog/$slug'
-      fullPath: '/blog/$slug'
-      preLoaderRoute: typeof BlogSlugRouteImport
-      parentRoute: typeof rootRouteImport
+    '/dashboard/history': {
+      id: '/dashboard/history'
+      path: '/history'
+      fullPath: '/dashboard/history'
+      preLoaderRoute: typeof DashboardHistoryRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/credits': {
+      id: '/dashboard/credits'
+      path: '/credits'
+      fullPath: '/dashboard/credits'
+      preLoaderRoute: typeof DashboardCreditsRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/auth/reset-password': {
       id: '/auth/reset-password'
@@ -784,6 +1004,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/orders': {
+      id: '/admin/orders'
+      path: '/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AdminOrdersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/generations': {
+      id: '/admin/generations'
+      path: '/generations'
+      fullPath: '/admin/generations'
+      preLoaderRoute: typeof AdminGenerationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/(tests)/test-error': {
       id: '/(tests)/test-error'
       path: '/test-error'
@@ -798,18 +1032,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof testsTest404RouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/(pages)/waitlist': {
-      id: '/(pages)/waitlist'
-      path: '/waitlist'
-      fullPath: '/waitlist'
-      preLoaderRoute: typeof pagesWaitlistRouteImport
+    '/(pages)/xcode-appiconset-guide': {
+      id: '/(pages)/xcode-appiconset-guide'
+      path: '/xcode-appiconset-guide'
+      fullPath: '/xcode-appiconset-guide'
+      preLoaderRoute: typeof pagesXcodeAppiconsetGuideRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/(pages)/roadmap': {
-      id: '/(pages)/roadmap'
-      path: '/roadmap'
-      fullPath: '/roadmap'
-      preLoaderRoute: typeof pagesRoadmapRouteImport
+    '/(pages)/xcode-appiconset-generator': {
+      id: '/(pages)/xcode-appiconset-generator'
+      path: '/xcode-appiconset-generator'
+      fullPath: '/xcode-appiconset-generator'
+      preLoaderRoute: typeof pagesXcodeAppiconsetGeneratorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(pages)/pwa-icon-sizes': {
+      id: '/(pages)/pwa-icon-sizes'
+      path: '/pwa-icon-sizes'
+      fullPath: '/pwa-icon-sizes'
+      preLoaderRoute: typeof pagesPwaIconSizesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(pages)/pricing': {
@@ -819,32 +1060,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof pagesPricingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/(pages)/contact': {
-      id: '/(pages)/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof pagesContactRouteImport
+    '/(pages)/ios-app-icon-sizes': {
+      id: '/(pages)/ios-app-icon-sizes'
+      path: '/ios-app-icon-sizes'
+      fullPath: '/ios-app-icon-sizes'
+      preLoaderRoute: typeof pagesIosAppIconSizesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/(pages)/changelog': {
-      id: '/(pages)/changelog'
-      path: '/changelog'
-      fullPath: '/changelog'
-      preLoaderRoute: typeof pagesChangelogRouteImport
+    '/(pages)/ios-app-icon-generator': {
+      id: '/(pages)/ios-app-icon-generator'
+      path: '/ios-app-icon-generator'
+      fullPath: '/ios-app-icon-generator'
+      preLoaderRoute: typeof pagesIosAppIconGeneratorRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/(pages)/ai': {
-      id: '/(pages)/ai'
-      path: '/ai'
-      fullPath: '/ai'
-      preLoaderRoute: typeof pagesAiRouteImport
+    '/(pages)/guides': {
+      id: '/(pages)/guides'
+      path: '/guides'
+      fullPath: '/guides'
+      preLoaderRoute: typeof pagesGuidesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/(pages)/about': {
-      id: '/(pages)/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof pagesAboutRouteImport
+    '/(pages)/favicon-sizes': {
+      id: '/(pages)/favicon-sizes'
+      path: '/favicon-sizes'
+      fullPath: '/favicon-sizes'
+      preLoaderRoute: typeof pagesFaviconSizesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(pages)/favicon-generator': {
+      id: '/(pages)/favicon-generator'
+      path: '/favicon-generator'
+      fullPath: '/favicon-generator'
+      preLoaderRoute: typeof pagesFaviconGeneratorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(pages)/app-icon-resizer': {
+      id: '/(pages)/app-icon-resizer'
+      path: '/app-icon-resizer'
+      fullPath: '/app-icon-resizer'
+      preLoaderRoute: typeof pagesAppIconResizerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(pages)/android-mipmap-generator': {
+      id: '/(pages)/android-mipmap-generator'
+      path: '/android-mipmap-generator'
+      fullPath: '/android-mipmap-generator'
+      preLoaderRoute: typeof pagesAndroidMipmapGeneratorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(pages)/android-app-icon-sizes': {
+      id: '/(pages)/android-app-icon-sizes'
+      path: '/android-app-icon-sizes'
+      fullPath: '/android-app-icon-sizes'
+      preLoaderRoute: typeof pagesAndroidAppIconSizesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(pages)/android-app-icon-generator': {
+      id: '/(pages)/android-app-icon-generator'
+      path: '/android-app-icon-generator'
+      fullPath: '/android-app-icon-generator'
+      preLoaderRoute: typeof pagesAndroidAppIconGeneratorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(pages)/android-adaptive-icon-safe-zone': {
+      id: '/(pages)/android-adaptive-icon-safe-zone'
+      path: '/android-adaptive-icon-safe-zone'
+      fullPath: '/android-adaptive-icon-safe-zone'
+      preLoaderRoute: typeof pagesAndroidAdaptiveIconSafeZoneRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(legals)/terms': {
@@ -867,6 +1150,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/cookie'
       preLoaderRoute: typeof legalsCookieRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/projects/': {
+      id: '/dashboard/projects/'
+      path: '/projects'
+      fullPath: '/dashboard/projects/'
+      preLoaderRoute: typeof DashboardProjectsIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/projects/$projectId': {
+      id: '/dashboard/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/dashboard/projects/$projectId'
+      preLoaderRoute: typeof DashboardProjectsProjectIdRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/api/webhooks/waffo': {
       id: '/api/webhooks/waffo'
@@ -896,6 +1193,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStorageFileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/exports/$exportId': {
+      id: '/api/exports/$exportId'
+      path: '/api/exports/$exportId'
+      fullPath: '/api/exports/$exportId'
+      preLoaderRoute: typeof ApiExportsExportIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/e2e/users': {
       id: '/api/e2e/users'
       path: '/api/e2e/users'
@@ -910,15 +1214,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(pages)/models/sunburst-vs-flare': {
+      id: '/(pages)/models/sunburst-vs-flare'
+      path: '/models/sunburst-vs-flare'
+      fullPath: '/models/sunburst-vs-flare'
+      preLoaderRoute: typeof pagesModelsSunburstVsFlareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(pages)/models/gpt-image-2-5-sunburst-app-icon-generator': {
+      id: '/(pages)/models/gpt-image-2-5-sunburst-app-icon-generator'
+      path: '/models/gpt-image-2-5-sunburst-app-icon-generator'
+      fullPath: '/models/gpt-image-2-5-sunburst-app-icon-generator'
+      preLoaderRoute: typeof pagesModelsGptImage25SunburstAppIconGeneratorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(pages)/models/gpt-image-2-5-sunburst': {
+      id: '/(pages)/models/gpt-image-2-5-sunburst'
+      path: '/models/gpt-image-2-5-sunburst'
+      fullPath: '/models/gpt-image-2-5-sunburst'
+      preLoaderRoute: typeof pagesModelsGptImage25SunburstRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminGenerationsRoute: typeof AdminGenerationsRoute
+  AdminOrdersRoute: typeof AdminOrdersRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminGenerationsRoute: AdminGenerationsRoute,
+  AdminOrdersRoute: AdminOrdersRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -944,11 +1273,19 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface DashboardRouteChildren {
+  DashboardCreditsRoute: typeof DashboardCreditsRoute
+  DashboardHistoryRoute: typeof DashboardHistoryRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardProjectsProjectIdRoute: typeof DashboardProjectsProjectIdRoute
+  DashboardProjectsIndexRoute: typeof DashboardProjectsIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardCreditsRoute: DashboardCreditsRoute,
+  DashboardHistoryRoute: DashboardHistoryRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardProjectsProjectIdRoute: DashboardProjectsProjectIdRoute,
+  DashboardProjectsIndexRoute: DashboardProjectsIndexRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
@@ -986,6 +1323,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   DashboardRoute: DashboardRouteWithChildren,
+  GenerateRoute: GenerateRoute,
   ManifestDotjsonRoute: ManifestDotjsonRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SettingsRoute: SettingsRouteWithChildren,
@@ -993,20 +1331,30 @@ const rootRouteChildren: RootRouteChildren = {
   legalsCookieRoute: legalsCookieRoute,
   legalsPrivacyRoute: legalsPrivacyRoute,
   legalsTermsRoute: legalsTermsRoute,
-  pagesAboutRoute: pagesAboutRoute,
-  pagesAiRoute: pagesAiRoute,
-  pagesChangelogRoute: pagesChangelogRoute,
-  pagesContactRoute: pagesContactRoute,
+  pagesAndroidAdaptiveIconSafeZoneRoute: pagesAndroidAdaptiveIconSafeZoneRoute,
+  pagesAndroidAppIconGeneratorRoute: pagesAndroidAppIconGeneratorRoute,
+  pagesAndroidAppIconSizesRoute: pagesAndroidAppIconSizesRoute,
+  pagesAndroidMipmapGeneratorRoute: pagesAndroidMipmapGeneratorRoute,
+  pagesAppIconResizerRoute: pagesAppIconResizerRoute,
+  pagesFaviconGeneratorRoute: pagesFaviconGeneratorRoute,
+  pagesFaviconSizesRoute: pagesFaviconSizesRoute,
+  pagesGuidesRoute: pagesGuidesRoute,
+  pagesIosAppIconGeneratorRoute: pagesIosAppIconGeneratorRoute,
+  pagesIosAppIconSizesRoute: pagesIosAppIconSizesRoute,
   pagesPricingRoute: pagesPricingRoute,
-  pagesRoadmapRoute: pagesRoadmapRoute,
-  pagesWaitlistRoute: pagesWaitlistRoute,
+  pagesPwaIconSizesRoute: pagesPwaIconSizesRoute,
+  pagesXcodeAppiconsetGeneratorRoute: pagesXcodeAppiconsetGeneratorRoute,
+  pagesXcodeAppiconsetGuideRoute: pagesXcodeAppiconsetGuideRoute,
   testsTest404Route: testsTest404Route,
   testsTestErrorRoute: testsTestErrorRoute,
   ApiPingRoute: ApiPingRoute,
-  BlogSlugRoute: BlogSlugRoute,
-  BlogIndexRoute: BlogIndexRoute,
+  pagesModelsGptImage25SunburstRoute: pagesModelsGptImage25SunburstRoute,
+  pagesModelsGptImage25SunburstAppIconGeneratorRoute:
+    pagesModelsGptImage25SunburstAppIconGeneratorRoute,
+  pagesModelsSunburstVsFlareRoute: pagesModelsSunburstVsFlareRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiE2eUsersRoute: ApiE2eUsersRoute,
+  ApiExportsExportIdRoute: ApiExportsExportIdRoute,
   ApiStorageFileRoute: ApiStorageFileRoute,
   ApiWebhooksCreemRoute: ApiWebhooksCreemRoute,
   ApiWebhooksStripeRoute: ApiWebhooksStripeRoute,

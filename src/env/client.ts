@@ -19,8 +19,14 @@ const clientEnvSchema = {
 
   // Payment (Waffo Pancake)
   VITE_WAFFO_PRODUCT_PRO_MONTHLY: z.string().optional(),
-  VITE_WAFFO_PRODUCT_PRO_YEARLY: z.string().optional(),
-  VITE_WAFFO_PRODUCT_LIFETIME: z.string().optional(),
+  VITE_WAFFO_PRODUCT_STUDIO_MONTHLY: z.string().optional(),
+  VITE_WAFFO_PRODUCT_LAUNCH_PACK: z.string().optional(),
+  VITE_WAFFO_PRODUCT_MAKER_PACK: z.string().optional(),
+  VITE_WAFFO_PRODUCT_STUDIO_PACK: z.string().optional(),
+
+  // Public product configuration only; the verification endpoint remains server-side.
+  VITE_TURNSTILE_SITE_KEY: z.string().optional(),
+  VITE_SUPPORT_EMAIL: z.email().optional(),
 
   // Analytics
   VITE_GOOGLE_ANALYTICS_ID: z.string().optional(),

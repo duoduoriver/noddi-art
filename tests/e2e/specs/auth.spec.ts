@@ -30,7 +30,7 @@ test.describe('authentication and protected routes', () => {
     const user = await registerE2EUser(request);
 
     await loginByForm(page, user);
-    await expect(page).toHaveURL(/\/dashboard\/?$/);
+    await expect(page).toHaveURL(/\/dashboard\/projects\/?$/);
   });
 
   test('allows a user to register from the register page', async ({
@@ -58,7 +58,7 @@ test.describe('authentication and protected routes', () => {
       role: 'user',
     });
     await loginByForm(page, user);
-    await expect(page).toHaveURL(/\/dashboard\/?$/);
+    await expect(page).toHaveURL(/\/dashboard\/projects\/?$/);
   });
 
   test('validates the registration password before requesting an account', async ({
@@ -97,7 +97,7 @@ test.describe('authentication and protected routes', () => {
     await loginByForm(page, user);
     await page.goto('/admin/users');
 
-    await expect(page).toHaveURL(/\/dashboard\/?$/);
+    await expect(page).toHaveURL(/\/dashboard\/projects\/?$/);
   });
 
   test('allows admin users to view the users dashboard', async ({

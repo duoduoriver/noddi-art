@@ -28,7 +28,7 @@ export async function registerE2EUser(
       email: user.email,
       password: user.password,
       name: user.name,
-      callbackURL: '/dashboard',
+      callbackURL: '/dashboard/projects',
     },
   });
 
@@ -70,7 +70,7 @@ export async function loginByForm(page: Page, user: E2EUser) {
     .locator('button[type="submit"]');
   await expect(signInButton).toBeEnabled();
   await signInButton.click();
-  await expect(page).toHaveURL(/\/dashboard\/?$/);
+  await expect(page).toHaveURL(/\/dashboard\/projects\/?$/);
 }
 
 /**

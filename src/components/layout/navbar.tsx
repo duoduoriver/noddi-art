@@ -7,8 +7,6 @@ import { runWhenIdle } from '@/lib/idle';
 import { buttonVariants } from '@/components/ui/button';
 import Container from '@/components/layout/container';
 import { Logo } from '@/components/shared/logo';
-import { ModeSwitcher } from '@/components/theme/mode-switcher';
-import { LocaleSwitcher } from '@/components/layout/locale-switcher';
 import { LoginWrapper } from '@/components/auth/login-wrapper';
 import { Link, useLocation } from '@tanstack/react-router';
 import { lazy, Suspense, useEffect, useState } from 'react';
@@ -18,12 +16,6 @@ import { m } from '@/locale/paraglide/messages';
 const NavbarSessionActions = lazy(() =>
   import('@/components/layout/navbar-session-actions').then((module) => ({
     default: module.NavbarSessionActions,
-  }))
-);
-
-const NavbarDesktopMenu = lazy(() =>
-  import('@/components/layout/navbar-desktop-menu').then((module) => ({
-    default: module.NavbarDesktopMenu,
   }))
 );
 
@@ -45,10 +37,9 @@ interface NavbarProps {
 export function Navbar({ scroll = true, hasAuthCookie = false }: NavbarProps) {
   const pathname = useLocation().pathname;
   const scrolled = useScroll(50);
-  const [shouldLoadDesktopMenu, setShouldLoadDesktopMenu] = useState(false);
   const showBarBg = scroll && scrolled;
 
-  const requestDesktopMenu = () => setShouldLoadDesktopMenu(true);
+  const requestDesktopMenu = () => undefined;
 
   return (
     <header
@@ -85,28 +76,13 @@ export function Navbar({ scroll = true, hasAuthCookie = false }: NavbarProps) {
               onFocusCapture={requestDesktopMenu}
               onPointerEnter={requestDesktopMenu}
             >
-              {shouldLoadDesktopMenu ? (
-                <Suspense
-                  fallback={
-                    <StaticDesktopNavLinks
-                      pathname={pathname}
-                      onRequestMenu={requestDesktopMenu}
-                    />
-                  }
-                >
-                  <NavbarDesktopMenu pathname={pathname} />
-                </Suspense>
-              ) : (
-                <StaticDesktopNavLinks
-                  pathname={pathname}
-                  onRequestMenu={requestDesktopMenu}
-                />
-              )}
+              <StaticDesktopNavLinks
+                pathname={pathname}
+                onRequestMenu={requestDesktopMenu}
+              />
             </div>
 
             <div className="flex items-center gap-4 shrink-0">
-              <LocaleSwitcher />
-              <ModeSwitcher />
               {websiteConfig.auth?.enable && (
                 <NavbarAuthActions hasAuthCookie={hasAuthCookie} />
               )}
@@ -228,20 +204,10 @@ function MobileNavbarFallback({
 
 function getStaticNavbarItems(): StaticNavbarItem[] {
   const links: StaticNavbarItem[] = [
-    { title: m.nav_features(), href: Routes.Features },
+    { title: m.noddi_nav_generate(), href: Routes.Generate },
+    { title: m.nav_pricing(), href: Routes.Pricing },
+    { title: m.nav_faq(), href: Routes.Faqs },
   ];
-
-  if (websiteConfig.payment?.enable) {
-    links.push({ title: m.nav_pricing(), href: Routes.Pricing });
-  }
-
-  if (websiteConfig.blog?.enable) {
-    links.push({ title: m.nav_blog(), href: Routes.Blog });
-  }
-
-  links.push({ menu: true, title: m.nav_ai_title() });
-  links.push({ menu: true, title: m.nav_pages() });
-
   return links;
 }
 

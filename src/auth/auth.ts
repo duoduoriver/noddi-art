@@ -5,11 +5,12 @@ import { tanstackStartCookies } from 'better-auth/tanstack-start';
 import { getDb } from '@/db';
 import { sendEmail } from '@/mail';
 import { subscribe } from '@/newsletter';
+import { grantSignupCredits } from '@/credits/service';
 import { getBaseUrl } from '@/lib/urls';
 import { serverEnv } from '@/env/server';
 import { websiteConfig } from '@/config/website';
 import { emailHarmony } from 'better-auth-harmony';
-import { admin, apiKey } from 'better-auth/plugins';
+import { admin, apiKey, captcha } from 'better-auth/plugins';
 
 /**
  * Better Auth Configuration
@@ -75,12 +76,22 @@ export const auth = betterAuth({
           },
         }
       : {}),
+    ...(serverEnv.GITHUB_CLIENT_ID && serverEnv.GITHUB_CLIENT_SECRET
+      ? {
+          github: {
+            clientId: serverEnv.GITHUB_CLIENT_ID,
+            clientSecret: serverEnv.GITHUB_CLIENT_SECRET,
+          },
+        }
+      : {}),
   },
   account: {
     // https://www.better-auth.com/docs/concepts/users-accounts#account-linking
     accountLinking: {
       enabled: websiteConfig.auth?.enableGoogleLogin,
-      trustedProviders: websiteConfig.auth?.enableGoogleLogin ? ['google'] : [],
+      trustedProviders: websiteConfig.auth?.enableGoogleLogin
+        ? ['google', 'github']
+        : [],
     },
   },
   user: {
@@ -101,6 +112,7 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
+          await grantSignupCredits(user.id);
           await onCreateUser(user);
         },
       },
@@ -109,6 +121,15 @@ export const auth = betterAuth({
   plugins: [
     // https://www.better-auth.com/docs/integrations/tanstack
     tanstackStartCookies(),
+    ...(serverEnv.TURNSTILE_SECRET_KEY
+      ? [
+          captcha({
+            provider: 'cloudflare-turnstile',
+            secretKey: serverEnv.TURNSTILE_SECRET_KEY,
+            endpoints: ['/sign-in/email'],
+          }),
+        ]
+      : []),
     // https://www.better-auth.com/docs/plugins/admin
     // support user management, ban/unban user, manage user roles, etc.
     admin({
