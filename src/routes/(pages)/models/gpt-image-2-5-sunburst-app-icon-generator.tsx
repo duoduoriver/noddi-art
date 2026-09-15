@@ -5,7 +5,7 @@ import { createFileRoute } from '@tanstack/react-router';
 const path = '/models/gpt-image-2-5-sunburst-app-icon-generator';
 const title = 'GPT-Image-2.5 Sunburst App Icon Generator | Sunburst AI';
 const description =
-  'Explore a GPT-Image-2.5 Sunburst app icon workflow, then use Sunburst AI to generate concepts, refine a favorite, and export icons for iOS, Android, macOS, favicon, and PWA.';
+  'Explore a GPT-Image-2.5 Sunburst app icon workflow, then use Sunburst AI to generate four concepts, pick a favorite, prepare an HD master when needed, and export icons for iOS, Android, macOS, favicon, and PWA.';
 
 export const Route = createFileRoute(
   '/(pages)/models/gpt-image-2-5-sunburst-app-icon-generator'
@@ -29,7 +29,7 @@ function SunburstAppIconGeneratorPage() {
       ctaLabel="Generate your app icon"
       points={[
         'Describe the app, symbol, style, color direction, and anything the icon should avoid.',
-        'Compare multiple concepts before spending time refining one direction.',
+        'Compare four concepts, then choose the direction that works best at app-icon sizes.',
         'Export the selected icon into platform-specific developer packages instead of resizing files by hand.',
       ]}
       sections={[
@@ -39,7 +39,7 @@ function SunburstAppIconGeneratorPage() {
         },
         {
           title: 'Review the icon in context',
-          body: 'Strong app icons need a clear silhouette, controlled detail, recognizable contrast, and enough breathing room for platform masks. Compare directions first, then refine the candidate that still works when reduced to the size users will actually see on a home screen or browser tab.',
+          body: 'Strong app icons need a clear silhouette, controlled detail, recognizable contrast, and enough breathing room for platform masks. Compare directions first, then pick the candidate that still works when reduced to the size users will actually see on a home screen or browser tab.',
         },
         {
           title: 'Export once for iOS, Android, macOS, and Web',

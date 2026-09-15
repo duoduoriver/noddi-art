@@ -13,13 +13,16 @@ function ProjectsPage() {
       <DashboardHeader
         breadcrumbs={[{ label: m.noddi_projects_title(), isCurrentPage: true }]}
       />
-      <main className="mx-auto w-full max-w-5xl p-4 lg:p-8">
+      <main className="mx-auto w-full max-w-6xl p-5 lg:p-8">
         <div className="mb-8 flex items-end justify-between gap-4">
           <div>
-            <p className="font-hand text-sm uppercase tracking-widest text-[#9b7bff]">
-              noddi
+            <span className="sunburst-eyebrow">Your workspace</span>
+            <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.04em]">
+              {m.noddi_projects_title()}
+            </h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+              Reopen previous concepts or start a fresh icon direction.
             </p>
-            <h1 className="font-hand text-4xl">{m.noddi_projects_title()}</h1>
           </div>
         </div>
         <ProjectList />

@@ -43,9 +43,9 @@ function XcodeAppiconsetGeneratorPage() {
       ]}
       workflow={[
         {
-          title: 'Finish the icon first',
+          title: 'Pick the icon first',
           description:
-            'Use AI generation and refinement to reach a design you actually want to ship before worrying about asset-catalog plumbing.',
+            'Generate four concepts and choose the design you actually want to ship before worrying about asset-catalog plumbing.',
         },
         {
           title: 'Create the HD master',
@@ -80,7 +80,7 @@ function XcodeAppiconsetGeneratorPage() {
           href: '/ios-app-icon-generator',
           label: 'iOS App Icon Generator',
           description:
-            'Start earlier in the workflow with AI generation and icon refinement.',
+            'Start earlier in the workflow with AI generation, concept selection, and HD preparation.',
         },
         {
           href: '/app-icon-resizer',

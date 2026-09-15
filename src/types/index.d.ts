@@ -57,7 +57,8 @@ export interface SocialConfig {
 /** Auth configuration */
 export interface AuthConfig {
   enable: boolean;                 // Whether to enable the auth (hide auth pages and features)
-  enableGoogleLogin?: boolean;     // Whether to enable google login
+  enableGoogleLogin?: boolean;     // Whether to enable Google login
+  enableGitHubLogin?: boolean;     // Whether to enable GitHub login
   enableCredentialLogin?: boolean; // Whether to enable email/password login
   enableDeleteAccount?: boolean;   // Whether to enable account deletion
 }

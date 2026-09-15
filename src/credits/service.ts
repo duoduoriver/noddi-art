@@ -351,6 +351,118 @@ export async function grantPurchasedCredits(
     );
 }
 
+export async function revokeCreditsForRefund({
+  userId,
+  paymentId,
+  refundId,
+  kind,
+}: {
+  userId: string;
+  paymentId: string;
+  refundId: string;
+  kind: 'one_time' | 'subscription';
+}) {
+  const db = getDb();
+  const operationId = `payment-refund:${refundId}`;
+  const [existing] = await db
+    .select({ id: creditLedger.id })
+    .from(creditLedger)
+    .where(eq(creditLedger.operationId, operationId))
+    .limit(1);
+  if (existing) return;
+
+  const [account] = await db
+    .select()
+    .from(creditAccounts)
+    .where(eq(creditAccounts.userId, userId))
+    .limit(1);
+  if (!account) return;
+
+  let planDelta = 0;
+  let purchasedDelta = 0;
+  let debtDelta = 0;
+  let nextPlanBalance = account.planBalance;
+  let nextPurchasedBalance = account.purchasedBalance;
+  let nextRefundDebt = account.refundDebt;
+  let nextPlanCode = account.planCode;
+  let nextPlanAllowance = account.planAllowance;
+  let nextPeriodEnd = account.periodEnd;
+
+  if (kind === 'one_time') {
+    const [grant] = await db
+      .select({
+        purchasedDelta: creditLedger.purchasedDelta,
+        debtDelta: creditLedger.debtDelta,
+      })
+      .from(creditLedger)
+      .where(
+        and(
+          eq(creditLedger.paymentId, paymentId),
+          eq(creditLedger.type, 'pack_grant')
+        )
+      )
+      .limit(1);
+    if (!grant) return;
+    const debtPreviouslyPaid = Math.max(0, -grant.debtDelta);
+    const removable = Math.min(account.purchasedBalance, grant.purchasedDelta);
+    const spentFromGrant = grant.purchasedDelta - removable;
+    purchasedDelta = -removable;
+    debtDelta = debtPreviouslyPaid + spentFromGrant;
+    nextPurchasedBalance = account.purchasedBalance - removable;
+    nextRefundDebt = account.refundDebt + debtDelta;
+  } else {
+    const spentFromPlan = Math.max(
+      0,
+      account.planAllowance - account.planBalance
+    );
+    planDelta = -account.planBalance;
+    debtDelta = spentFromPlan;
+    nextPlanBalance = 0;
+    nextRefundDebt = account.refundDebt + spentFromPlan;
+    nextPlanCode = 'free';
+    nextPlanAllowance = FREE_SIGNUP_CREDITS;
+    nextPeriodEnd = null;
+  }
+
+  const createdAt = now();
+  const inserted = await db
+    .insert(creditLedger)
+    .values({
+      id: id(),
+      operationId,
+      userId,
+      planDelta,
+      purchasedDelta,
+      debtDelta,
+      type: 'payment_refund',
+      paymentId,
+      metadata: JSON.stringify({ kind }),
+      createdAt,
+    })
+    .onConflictDoNothing()
+    .returning({ operationId: creditLedger.operationId });
+  if (!inserted.length) return;
+
+  await db
+    .update(creditAccounts)
+    .set({
+      planBalance: nextPlanBalance,
+      purchasedBalance: nextPurchasedBalance,
+      refundDebt: nextRefundDebt,
+      planCode: nextPlanCode,
+      planAllowance: nextPlanAllowance,
+      periodEnd: nextPeriodEnd,
+      paidAccessAt:
+        nextPlanCode !== 'free' || nextPurchasedBalance > 0
+          ? account.paidAccessAt
+          : null,
+      version: account.version + 1,
+      lastOperationId: operationId,
+      updatedAt: createdAt,
+    })
+    .where(eq(creditAccounts.userId, userId));
+}
+
 export async function listCreditLedger(userId: string, limit = 50) {
   return getDb()
     .select()

@@ -47,19 +47,13 @@ export function GuidePage({
   related: GuideLink[];
 }) {
   return (
-    <main className="bg-white text-[#111111]">
-      <Container className="px-5 py-16 lg:px-10 lg:py-24">
+    <main className="sunburst-shell">
+      <Container className="px-5 py-14 lg:px-10 lg:py-20">
         <article className="mx-auto max-w-5xl">
           <header>
-            <p className="text-sm font-bold uppercase tracking-[0.22em] text-[#6548d8]">
-              {eyebrow}
-            </p>
-            <h1 className="mt-4 max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-              {title}
-            </h1>
-            <p className="mt-6 max-w-3xl text-lg leading-8 text-muted-foreground">
-              {description}
-            </p>
+            <p className="sunburst-eyebrow">{eyebrow}</p>
+            <h1 className="sunburst-heading mt-5 max-w-4xl">{title}</h1>
+            <p className="sunburst-copy mt-5 max-w-3xl">{description}</p>
             <p className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               Updated {updated}
             </p>
@@ -69,7 +63,7 @@ export function GuidePage({
             {quickFacts.map((fact) => (
               <div
                 key={fact.label}
-                className="border-2 border-black bg-[#f7f7f3] p-4"
+                className="rounded-2xl border border-[#d8d7dd] bg-[#fbfbf8] p-4 shadow-[0_8px_22px_rgba(17,17,17,0.04)]"
               >
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
                   {fact.label}
@@ -79,7 +73,7 @@ export function GuidePage({
             ))}
           </section>
 
-          <section className="mt-12 border-2 border-black bg-[#111111] p-6 text-white shadow-[5px_5px_0_#c6ff5b] sm:p-8">
+          <section className="mt-12 rounded-2xl border-2 border-black bg-[#111111] p-6 text-white shadow-[4px_4px_0_#c6ff5b] sm:p-8">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#c6ff5b]">
               Use the tool
             </p>
@@ -104,14 +98,14 @@ export function GuidePage({
               <h2 className="text-3xl font-bold tracking-tight">
                 {tableTitle ?? 'Size reference'}
               </h2>
-              <div className="mt-6 overflow-x-auto rounded-xl border-2 border-black">
+              <div className="mt-6 overflow-x-auto rounded-2xl border border-[#d8d7dd] bg-white shadow-[0_10px_28px_rgba(17,17,17,0.05)]">
                 <table className="w-full min-w-[620px] border-collapse text-left text-sm">
-                  <thead className="bg-[#f1f1ed]">
+                  <thead className="bg-[#f6f5f2]">
                     <tr>
                       {table.headers.map((header) => (
                         <th
                           key={header}
-                          className="border-b-2 border-black px-4 py-3 font-bold"
+                          className="border-b border-[#d8d7dd] px-4 py-3 font-bold"
                         >
                           {header}
                         </th>
@@ -165,7 +159,7 @@ export function GuidePage({
                   </ul>
                 ) : null}
                 {section.code ? (
-                  <pre className="mt-6 overflow-x-auto rounded-xl border-2 border-black bg-[#111111] p-5 text-sm leading-7 text-white">
+                  <pre className="mt-6 overflow-x-auto rounded-2xl border-2 border-black bg-[#111111] p-5 text-sm leading-7 text-white shadow-[3px_3px_0_#9b7bff]">
                     <code>{section.code}</code>
                   </pre>
                 ) : null}
@@ -198,7 +192,7 @@ export function GuidePage({
                   <a
                     key={item.href}
                     href={item.href}
-                    className="block rounded-xl border-2 border-black p-4 transition-transform hover:-translate-y-0.5"
+                    className="sunburst-card block p-4 transition-transform hover:-translate-y-0.5 hover:border-black"
                   >
                     <span className="font-bold underline decoration-2 underline-offset-4">
                       {item.label}

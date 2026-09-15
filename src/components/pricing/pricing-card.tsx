@@ -1,5 +1,4 @@
 import { authClient } from '@/auth/client';
-import { SketchFrame } from '@/components/noddi/sketch-frame';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { formatPrice } from '@/lib/formatter';
 import { Routes } from '@/lib/routes';
@@ -11,7 +10,7 @@ import type {
   PricePlan,
 } from '@/payment/types';
 import { PlanIntervals, PaymentTypes } from '@/payment/types';
-import { IconArrowRight, IconCheck } from '@tabler/icons-react';
+import { IconArrowRight, IconCheck, IconSparkles } from '@tabler/icons-react';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { CheckoutButton } from './create-checkout-button';
@@ -32,12 +31,6 @@ function getPriceForPlan(
     );
   });
 }
-
-const planPresentation = {
-  free: { image: '/pricing/free.png' },
-  pro: { image: '/pricing/pro.png' },
-  studio: { image: '/pricing/studio.png' },
-} as const;
 
 interface PricingCardProps {
   plan: PricePlan;
@@ -60,11 +53,6 @@ export function PricingCard({
   const { data: session } = authClient.useSession();
   const [mounted, setMounted] = useState(false);
   const isAuthenticated = mounted && !!session?.user;
-  const presentation =
-    planPresentation[plan.id as keyof typeof planPresentation] ??
-    planPresentation.free;
-  const { image } = presentation;
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -84,138 +72,119 @@ export function PricingCard({
   const cardFeatures = [
     { label: plan.features?.[0] ?? 'Monthly credits', included: true },
     { label: 'AI icon concepts', included: true },
-    { label: 'Full-resolution exports', included: !plan.isFree },
-    { label: 'Commercial projects', included: !plan.isFree },
+    { label: 'PNG / WebP + Android / Web export', included: true },
+    { label: '1024px HD + iOS / macOS export', included: !plan.isFree },
     { label: 'Priority support', included: plan.id === 'studio' },
   ];
 
   return (
-    <SketchFrame
-      color={plan.popular ? '#83bd00' : '#111111'}
-      className={cn('min-h-full overflow-visible bg-white', className)}
+    <article
+      className={cn(
+        'relative flex min-h-full flex-col rounded-2xl border bg-white px-6 py-7 text-left shadow-[0_12px_34px_rgba(17,17,17,0.06)]',
+        plan.popular
+          ? 'border-2 border-[#7a5cff] shadow-[4px_4px_0_#c6ff5b]'
+          : 'border-[#d8d7dd]',
+        className
+      )}
     >
-      <article className="relative flex min-h-full flex-col px-6 py-7 text-center">
-        {plan.popular ? (
-          <span className="absolute right-3 top-3 z-30 rotate-2">
-            <span
-              aria-hidden="true"
-              className="brush-highlight absolute inset-0 bg-[#c6ff5b]"
-            />
-            <span className="relative z-10 block px-3 py-0.5 font-hand text-xs font-bold">
-              MOST POPULAR
-            </span>
-          </span>
-        ) : null}
+      {plan.popular ? (
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#7a5cff] px-4 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-white">
+          Most popular
+        </span>
+      ) : null}
 
-        <h3 className="font-hand text-3xl font-bold leading-none">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-xl font-extrabold tracking-[-0.02em]">
           {plan.name}
         </h3>
-        <span
-          aria-hidden="true"
-          className="brush-highlight mx-auto block h-2 w-20 bg-[#9b7bff]"
-        />
-        <p className="mt-3 min-h-10 text-sm leading-5 text-[#5f5f5f]">
-          {plan.description}
-        </p>
+        <span className="flex size-10 items-center justify-center rounded-xl border border-[#d8d7dd] bg-[#fbfbf8]">
+          <IconSparkles className="size-5 text-[#7a5cff]" />
+        </span>
+      </div>
+      <p className="mt-3 min-h-10 text-sm leading-5 text-[#666]">
+        {plan.description}
+      </p>
 
-        <div className="mt-5 flex items-end justify-center gap-1">
-          <span className="font-hand text-5xl font-bold leading-none">
-            {priceLabel}
-          </span>
-          {!plan.isFree ? (
-            <span className="mb-1 text-sm font-semibold">{billingLabel}</span>
-          ) : null}
-        </div>
-        <span
-          aria-hidden="true"
-          className="brush-highlight mx-auto mt-2 block h-2 w-16 bg-black"
-        />
-
-        <img
-          src={image}
-          alt=""
-          className="mx-auto mt-3 size-24 object-contain"
-        />
-
-        <ul className="mt-5 space-y-3 text-left text-sm">
-          {cardFeatures.map((feature) => (
-            <li key={feature.label} className="flex items-start gap-2">
-              {feature.included ? (
-                <IconCheck className="mt-0.5 size-4 shrink-0 rounded-full bg-[#c6ff5b] p-0.5 text-black" />
-              ) : (
-                <span
-                  aria-hidden="true"
-                  className="w-4 shrink-0 text-center text-[#777]"
-                >
-                  —
-                </span>
-              )}
-              <span className={feature.included ? undefined : 'text-[#777]'}>
-                {feature.label}
-              </span>
-            </li>
-          ))}
-          {plan.limits?.map((limit) => (
-            <li key={limit} className="flex items-start gap-2 text-[#5f5f5f]">
+      <div className="mt-6 flex items-end gap-1">
+        <span className="text-5xl font-extrabold leading-none tracking-[-0.05em]">
+          {priceLabel}
+        </span>
+        {!plan.isFree ? (
+          <span className="mb-1 text-sm font-semibold">{billingLabel}</span>
+        ) : null}
+      </div>
+      <ul className="mt-7 space-y-3 text-sm">
+        {cardFeatures.map((feature) => (
+          <li key={feature.label} className="flex items-start gap-2">
+            {feature.included ? (
+              <IconCheck className="mt-0.5 size-4 shrink-0 rounded-full bg-[#c6ff5b] p-0.5 text-black" />
+            ) : (
               <span
                 aria-hidden="true"
-                className="mt-1.5 h-px w-4 shrink-0 bg-current"
-              />
-              <span>{limit}</span>
-            </li>
-          ))}
-        </ul>
-
-        <div className="mt-auto pt-7">
-          {plan.isFree ? (
-            isAuthenticated ? (
-              <Button disabled className="h-14 w-full font-hand text-lg">
-                CURRENT PLAN
-              </Button>
-            ) : (
-              <Link
-                to={Routes.Login}
-                className={cn(
-                  buttonVariants(),
-                  'brush-button h-14 w-full text-lg font-bold'
-                )}
+                className="w-4 shrink-0 text-center text-[#777]"
               >
-                GET STARTED <IconArrowRight className="ml-2 text-[#c6ff5b]" />
-              </Link>
-            )
-          ) : isCurrentPlan ? (
-            <Button
-              disabled
-              className="h-14 w-full border-2 border-black bg-[#c6ff5b] font-hand text-lg text-black opacity-100"
-            >
+                —
+              </span>
+            )}
+            <span className={feature.included ? undefined : 'text-[#777]'}>
+              {feature.label}
+            </span>
+          </li>
+        ))}
+        {plan.limits?.map((limit) => (
+          <li key={limit} className="flex items-start gap-2 text-[#5f5f5f]">
+            <span
+              aria-hidden="true"
+              className="mt-1.5 h-px w-4 shrink-0 bg-current"
+            />
+            <span>{limit}</span>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-auto pt-8">
+        {plan.isFree ? (
+          isAuthenticated ? (
+            <Button disabled className="h-12 w-full text-base">
               CURRENT PLAN
             </Button>
-          ) : price && hasValidPriceId && isAuthenticated ? (
-            <CheckoutButton
-              planId={plan.id}
-              priceId={price.priceId}
-              metadata={metadata}
-              className="h-14 w-full text-lg font-bold"
-            >
-              CHOOSE PLAN <IconArrowRight className="ml-2 text-[#c6ff5b]" />
-            </CheckoutButton>
-          ) : price && hasValidPriceId ? (
+          ) : (
             <Link
               to={Routes.Login}
-              className={cn(
-                buttonVariants(),
-                'brush-button h-14 w-full text-lg font-bold'
-              )}
+              className={cn(buttonVariants(), 'h-12 w-full text-base')}
             >
-              CHOOSE PLAN <IconArrowRight className="ml-2 text-[#c6ff5b]" />
+              GET STARTED <IconArrowRight className="ml-2 text-[#c6ff5b]" />
             </Link>
-          ) : (
-            <Button disabled className="h-14 w-full font-hand text-lg">
-              COMING SOON
-            </Button>
-          )}
-        </div>
-      </article>
-    </SketchFrame>
+          )
+        ) : isCurrentPlan ? (
+          <Button
+            disabled
+            className="h-12 w-full border-2 border-black bg-[#c6ff5b] text-base text-black opacity-100"
+          >
+            CURRENT PLAN
+          </Button>
+        ) : price && hasValidPriceId && isAuthenticated ? (
+          <CheckoutButton
+            planId={plan.id}
+            priceId={price.priceId}
+            metadata={metadata}
+            className="h-12 w-full text-base"
+          >
+            CHOOSE PLAN <IconArrowRight className="ml-2 text-[#c6ff5b]" />
+          </CheckoutButton>
+        ) : price && hasValidPriceId ? (
+          <Link
+            to={Routes.Login}
+            className={cn(buttonVariants(), 'h-12 w-full text-base')}
+          >
+            CHOOSE PLAN <IconArrowRight className="ml-2 text-[#c6ff5b]" />
+          </Link>
+        ) : (
+          <Button disabled className="h-12 w-full text-base">
+            COMING SOON
+          </Button>
+        )}
+      </div>
+    </article>
   );
 }

@@ -27,10 +27,10 @@ const MobileNavbarSessionActions = lazy(() =>
 );
 
 const mobileLinkClass =
-  'flex w-full items-center rounded-md p-2 text-base text-muted-foreground transition-colors duration-150 hover:text-foreground';
-const mobileLinkActiveClass = 'font-semibold text-primary';
+  'flex w-full items-center rounded-xl border border-transparent px-3 py-2.5 text-base font-bold text-[#55555e] transition-colors duration-150 hover:border-[#dedde3] hover:bg-[#f6f5f2] hover:text-foreground';
+const mobileLinkActiveClass = 'border-[#b9aaff] bg-[#f1ebff] text-[#6548d8]';
 const mobileSubLinkClass =
-  'flex w-full items-center gap-4 rounded-md p-2 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground';
+  'flex w-full items-center gap-4 rounded-xl px-3 py-2.5 text-sm font-semibold text-[#666] transition-colors duration-150 hover:bg-[#f6f5f2] hover:text-foreground';
 
 interface NavbarMobileProps extends React.HTMLAttributes<HTMLDivElement> {
   hasAuthCookie?: boolean;
@@ -86,7 +86,7 @@ export function NavbarMobile({
       >
         <Link to="/" className="flex items-center gap-2">
           <Logo />
-          <span className="text-xl font-semibold">
+          <span className="text-lg font-extrabold tracking-[-0.02em]">
             {websiteConfig.metadata?.name}
           </span>
         </Link>
@@ -106,7 +106,7 @@ export function NavbarMobile({
             aria-expanded={open}
             aria-label={m.common_toggle_menu()}
             onClick={() => setOpen((o) => !o)}
-            className="size-8 rounded-md border"
+            className="size-10 rounded-xl border-2 border-black bg-white shadow-none"
           >
             {open ? (
               <IconX className="size-4" />
@@ -122,7 +122,7 @@ export function NavbarMobile({
           role="dialog"
           aria-modal="true"
           aria-label={m.common_mobile_navigation()}
-          className="fixed inset-0 top-14.25 z-50 flex flex-col overflow-y-auto bg-background animate-in fade-in-0 duration-200"
+          className="fixed inset-0 top-14.25 z-50 flex flex-col overflow-y-auto border-t border-[#ecebf0] bg-white animate-in fade-in-0 duration-200"
         >
           <div className="flex flex-1 flex-col items-start gap-4 p-4">
             {websiteConfig.auth?.enable && !hasSessionUser && (
@@ -148,7 +148,7 @@ export function NavbarMobile({
               </div>
             )}
 
-            <ul className="w-full space-y-1">
+            <ul className="w-full space-y-2 rounded-2xl border border-[#dedde3] bg-[#fbfbf8] p-2">
               {menuLinks?.map((item) => {
                 const active = item.href
                   ? isLinkActive(item.href, pathname)

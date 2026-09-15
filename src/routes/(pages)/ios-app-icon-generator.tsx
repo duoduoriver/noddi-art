@@ -5,7 +5,7 @@ import { createFileRoute } from '@tanstack/react-router';
 const path = '/ios-app-icon-generator';
 const title = 'iOS App Icon Generator with Xcode Export | Sunburst AI';
 const description =
-  'Generate an AI app icon, refine the strongest direction, and export a 1024px iOS AppIcon package for Xcode from Sunburst AI.';
+  'Generate four AI app-icon concepts, pick the strongest direction, prepare a 1024px HD master, and export an iOS AppIcon package for Xcode from Sunburst AI.';
 
 export const Route = createFileRoute('/(pages)/ios-app-icon-generator')({
   head: () =>
@@ -45,7 +45,7 @@ function IosAppIconGeneratorPage() {
             'Start with the product purpose, icon subject, style direction, colors, and details to avoid.',
         },
         {
-          title: 'Refine one direction',
+          title: 'Pick one direction',
           description:
             'Compare concepts at small sizes, choose the clearest silhouette, and create the HD master once the design is ready.',
         },

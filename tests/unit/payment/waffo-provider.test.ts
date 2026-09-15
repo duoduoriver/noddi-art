@@ -5,9 +5,14 @@ const mocks = vi.hoisted(() => ({
   verifyWebhook: vi.fn(),
   insert: vi.fn(),
   update: vi.fn(),
+  select: vi.fn(),
+  from: vi.fn(),
+  selectWhere: vi.fn(),
+  limit: vi.fn(),
   values: vi.fn(),
   set: vi.fn(),
   where: vi.fn(),
+  revokeCreditsForRefund: vi.fn(),
 }));
 
 vi.mock('@waffo/pancake-ts', () => ({
@@ -51,6 +56,7 @@ vi.mock('@/db', () => ({
   getDb: () => ({
     insert: mocks.insert,
     update: mocks.update,
+    select: mocks.select,
   }),
 }));
 
@@ -61,6 +67,7 @@ vi.mock('@/notification', () => ({
 vi.mock('@/credits/service', () => ({
   grantPurchasedCredits: vi.fn(),
   grantSubscriptionPeriod: vi.fn(),
+  revokeCreditsForRefund: mocks.revokeCreditsForRefund,
 }));
 
 vi.mock('@/lib/price-plan', () => ({
@@ -84,12 +91,21 @@ describe('Waffo provider boundary', () => {
     mocks.verifyWebhook.mockReset();
     mocks.insert.mockReset();
     mocks.update.mockReset();
+    mocks.select.mockReset();
+    mocks.from.mockReset();
+    mocks.selectWhere.mockReset();
+    mocks.limit.mockReset();
     mocks.values.mockReset();
     mocks.set.mockReset();
     mocks.where.mockReset();
+    mocks.revokeCreditsForRefund.mockReset();
     mocks.insert.mockReturnValue({ values: mocks.values });
     mocks.update.mockReturnValue({ set: mocks.set });
+    mocks.select.mockReturnValue({ from: mocks.from });
+    mocks.from.mockReturnValue({ where: mocks.selectWhere });
+    mocks.selectWhere.mockReturnValue({ limit: mocks.limit });
     mocks.set.mockReturnValue({ where: mocks.where });
+    mocks.limit.mockResolvedValue([]);
     mocks.values.mockResolvedValue(undefined);
     mocks.where.mockResolvedValue(undefined);
     mocks.createCheckout.mockResolvedValue({
@@ -299,6 +315,10 @@ describe('Waffo provider boundary', () => {
       },
     });
 
+    mocks.limit.mockResolvedValueOnce([
+      { id: 'ORD_123', userId: 'user_123', type: 'one_time' },
+    ]);
+
     await new WaffoProvider().handleWebhookEvent(
       '{"eventType":"refund.succeeded"}',
       'signed'
@@ -307,6 +327,12 @@ describe('Waffo provider boundary', () => {
     expect(mocks.set).toHaveBeenCalledWith(
       expect.objectContaining({ paid: false, updatedAt: expect.any(Date) })
     );
+    expect(mocks.revokeCreditsForRefund).toHaveBeenCalledWith({
+      userId: 'user_123',
+      paymentId: 'ORD_123',
+      refundId: 'REFUND_123',
+      kind: 'one_time',
+    });
   });
 
   test('inserts a subscription payment on subscription.activated', async () => {
@@ -437,6 +463,10 @@ describe('Waffo provider boundary', () => {
       },
     });
 
+    mocks.limit.mockResolvedValueOnce([
+      { id: 'ORD_renewal', userId: 'user_123', type: 'subscription' },
+    ]);
+
     await new WaffoProvider().handleWebhookEvent(
       '{"eventType":"refund.succeeded"}',
       'signed'
@@ -446,6 +476,12 @@ describe('Waffo provider boundary', () => {
     expect(mocks.set).toHaveBeenCalledWith(
       expect.objectContaining({ paid: false })
     );
+    expect(mocks.revokeCreditsForRefund).toHaveBeenCalledWith({
+      userId: 'user_123',
+      paymentId: 'ORD_renewal',
+      refundId: 'REFUND_no_pay',
+      kind: 'subscription',
+    });
   });
 
   test('ignores subscription events that are missing userId or priceId', async () => {

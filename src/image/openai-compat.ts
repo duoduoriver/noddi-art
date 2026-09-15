@@ -4,6 +4,7 @@ import { encodePng, normalizeToPng, resizePng } from '@/image/png';
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 const FETCH_TIMEOUT_MS = 30_000;
 const IMAGE_REQUEST_TIMEOUT_MS = 5 * 60_000;
+const E2E_IMAGE_MODEL = 'e2e-fake-image';
 
 export type ImageChannelName = 'primary' | 'fallback';
 export type ImageOperation = 'generation' | 'edit' | 'moderation';
@@ -30,6 +31,45 @@ export class ImageProviderError extends Error {
     super(message);
     this.name = 'ImageProviderError';
   }
+}
+
+function isLocalE2EMode() {
+  return import.meta.env.DEV === true && import.meta.env.MODE === 'e2e';
+}
+
+function isE2EFakeChannel(channel: ImageChannel) {
+  return isLocalE2EMode() && channel.model === E2E_IMAGE_MODEL;
+}
+
+async function fakeConceptSheet(): Promise<ImageCallResult> {
+  const colors = [
+    [155, 123, 255],
+    [198, 255, 91],
+    [255, 111, 199],
+    [111, 193, 255],
+  ] as const;
+  const data = new Uint8ClampedArray(1024 * 1024 * 4);
+
+  for (let y = 0; y < 1024; y += 1) {
+    for (let x = 0; x < 1024; x += 1) {
+      const quadrant = (y >= 512 ? 2 : 0) + (x >= 512 ? 1 : 0);
+      const [red, green, blue] = colors[quadrant];
+      const offset = (y * 1024 + x) * 4;
+      const insetX = x % 512;
+      const insetY = y % 512;
+      const insideMark =
+        insetX >= 160 && insetX < 352 && insetY >= 160 && insetY < 352;
+      data[offset] = insideMark ? 17 : red;
+      data[offset + 1] = insideMark ? 17 : green;
+      data[offset + 2] = insideMark ? 17 : blue;
+      data[offset + 3] = 255;
+    }
+  }
+
+  return {
+    bytes: await encodePng({ data, width: 1024, height: 1024 }),
+    mimeType: 'image/png',
+  };
 }
 
 function normalizeBaseUrl(value: string) {
@@ -66,6 +106,18 @@ export function getImageChannels(): {
   primary: ImageChannel;
   fallback: ImageChannel | null;
 } {
+  if (isLocalE2EMode()) {
+    return {
+      primary: {
+        name: 'primary',
+        baseUrl: 'https://e2e-image.invalid/v1',
+        apiKey: 'e2e-only',
+        model: E2E_IMAGE_MODEL,
+      },
+      fallback: null,
+    };
+  }
+
   const primary = configuredChannel(
     'primary',
     serverEnv.IMAGE_PRIMARY_BASE_URL,
@@ -172,6 +224,8 @@ export async function moderatePrompt(
   prompt: string,
   idempotencyKey: string
 ): Promise<'clear' | 'flagged' | 'unsupported'> {
+  if (isE2EFakeChannel(channel)) return 'clear';
+
   try {
     const body = await postJson(
       channel,
@@ -202,6 +256,8 @@ export async function generateImage(
   quality: ImageQuality,
   idempotencyKey: string
 ): Promise<ImageCallResult> {
+  if (isE2EFakeChannel(channel)) return fakeConceptSheet();
+
   let body: Record<string, unknown>;
   try {
     body = await postJson(
@@ -243,6 +299,12 @@ export async function editImage(
   idempotencyKey: string
 ): Promise<ImageCallResult> {
   const form = new FormData();
+  if (isE2EFakeChannel(channel)) {
+    const references = Array.isArray(reference) ? reference : [reference];
+    const first = references[0];
+    if (!first) throw new ImageProviderError('Fake provider needs a reference');
+    return assert1024Png(first);
+  }
   form.set('model', channel.model);
   form.set('prompt', prompt);
   form.set('size', '1024x1024');

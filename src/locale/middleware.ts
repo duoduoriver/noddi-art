@@ -4,7 +4,5 @@ export function localeMiddleware(
   request: Request,
   resolve: (request: Request) => Response | Promise<Response>
 ) {
-  return paraglideMiddleware(request, ({ request: localizedRequest }) =>
-    resolve(localizedRequest)
-  );
+  return paraglideMiddleware(request, () => resolve(request));
 }

@@ -37,7 +37,7 @@ export function SidebarLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider
-      className="min-h-svh flex"
+      className="min-h-svh flex bg-[#f7f6fb]"
       style={
         {
           '--sidebar-width': 'calc(var(--spacing) * 72)',
@@ -46,7 +46,9 @@ export function SidebarLayout({ children }: { children: ReactNode }) {
       }
     >
       <DashboardSidebar user={session.user} variant="inset" />
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset className="overflow-hidden border border-[#dedde3] bg-white shadow-[0_14px_40px_rgba(17,17,17,0.06)]">
+        {children}
+      </SidebarInset>
     </SidebarProvider>
   );
 }

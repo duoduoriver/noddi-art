@@ -53,10 +53,15 @@ export function CreditSummary() {
     queryKey: ['payment-history'],
     queryFn: () => getPaymentHistory(),
   });
-  if (summary.isPending) return <p>{m.noddi_project_processing()}</p>;
+  if (summary.isPending)
+    return (
+      <div className="sunburst-card flex min-h-40 items-center justify-center p-6 text-sm text-muted-foreground">
+        {m.noddi_project_processing()}
+      </div>
+    );
   if (summary.error || !summary.data)
     return (
-      <div role="alert">
+      <div role="alert" className="sunburst-card-strong p-5">
         <p>
           {m.noddi_credits_load_error({
             message: summary.error?.message ?? '',
@@ -71,15 +76,21 @@ export function CreditSummary() {
   return (
     <div className="space-y-8">
       <div className="grid gap-4 sm:grid-cols-3">
-        <article className="border-2 border-black bg-white p-5 shadow-[3px_3px_0_#111]">
-          <p className="text-sm">{m.noddi_credits_available()}</p>
-          <p className="font-hand text-5xl">{total}</p>
+        <article className="sunburst-card-strong p-5">
+          <p className="text-sm font-semibold text-[#666]">
+            {m.noddi_credits_available()}
+          </p>
+          <p className="mt-2 text-5xl font-extrabold tracking-[-0.05em]">
+            {total}
+          </p>
         </article>
-        <article className="border-2 border-black bg-white p-5 shadow-[3px_3px_0_#9b7bff]">
-          <p className="text-sm">
+        <article className="sunburst-card-purple p-5">
+          <p className="text-sm font-semibold text-[#666]">
             {m.noddi_credits_plan_label({ plan: summary.data.planCode })}
           </p>
-          <p className="font-hand text-5xl">{summary.data.planBalance}</p>
+          <p className="mt-2 text-5xl font-extrabold tracking-[-0.05em]">
+            {summary.data.planBalance}
+          </p>
           {summary.data.periodEnd ? (
             <p className="mt-2 text-xs">
               {m.noddi_credits_renews({
@@ -88,9 +99,13 @@ export function CreditSummary() {
             </p>
           ) : null}
         </article>
-        <article className="border-2 border-black bg-white p-5 shadow-[3px_3px_0_#c6ff5b]">
-          <p className="text-sm">{m.noddi_credits_purchased()}</p>
-          <p className="font-hand text-5xl">{summary.data.purchasedBalance}</p>
+        <article className="sunburst-card p-5">
+          <p className="text-sm font-semibold text-[#666]">
+            {m.noddi_credits_purchased()}
+          </p>
+          <p className="mt-2 text-5xl font-extrabold tracking-[-0.05em]">
+            {summary.data.purchasedBalance}
+          </p>
           {websiteConfig.payment?.enable ? (
             <Button
               render={<Link to="/pricing" />}
@@ -105,7 +120,7 @@ export function CreditSummary() {
       {summary.data.frozen ? (
         <p
           role="alert"
-          className="border-l-4 border-[#ff6fc7] bg-[#ff6fc7]/10 p-4"
+          className="rounded-xl border border-[#f2b6d6] bg-[#fff0f7] p-4"
         >
           {m.noddi_credits_frozen()}
         </p>
@@ -113,19 +128,23 @@ export function CreditSummary() {
       {summary.data.refundDebt > 0 ? (
         <p
           role="alert"
-          className="border-l-4 border-[#ff6fc7] bg-[#ff6fc7]/10 p-4"
+          className="rounded-xl border border-[#f2b6d6] bg-[#fff0f7] p-4"
         >
           {m.noddi_credits_refund_debt({ credits: summary.data.refundDebt })}
         </p>
       ) : null}
       {websiteConfig.payment?.enable ? (
         <section>
-          <h2 className="mb-3 font-hand text-2xl">{m.noddi_billing_title()}</h2>
+          <h2 className="mb-3 text-2xl font-extrabold tracking-[-0.03em]">
+            {m.noddi_billing_title()}
+          </h2>
           <BillingCard />
         </section>
       ) : null}
       <section>
-        <h2 className="mb-3 font-hand text-2xl">{m.noddi_ledger_title()}</h2>
+        <h2 className="mb-3 text-2xl font-extrabold tracking-[-0.03em]">
+          {m.noddi_ledger_title()}
+        </h2>
         {ledger.isPending ? (
           <p>{m.noddi_ledger_loading()}</p>
         ) : ledger.error ? (
@@ -136,14 +155,14 @@ export function CreditSummary() {
             </Button>
           </div>
         ) : !ledger.data?.length ? (
-          <p className="border-2 border-dashed border-black p-5">
+          <p className="sunburst-soft-band rounded-2xl border border-dashed border-[#b9aaff] p-5">
             {m.noddi_ledger_empty()}
           </p>
         ) : (
-          <div className="overflow-x-auto border-2 border-black">
+          <div className="overflow-x-auto rounded-2xl border border-[#dedde3] bg-white shadow-[0_8px_24px_rgba(17,17,17,0.04)]">
             <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b-2 border-black">
+              <thead className="bg-[#f6f5f2]">
+                <tr className="border-b border-[#dedde3]">
                   <th className="p-3">{m.noddi_ledger_activity()}</th>
                   <th className="p-3">{m.noddi_ledger_credits()}</th>
                   <th className="p-3">{m.noddi_ledger_date()}</th>
@@ -151,7 +170,7 @@ export function CreditSummary() {
               </thead>
               <tbody>
                 {ledger.data.map((entry) => (
-                  <tr key={entry.id} className="border-b">
+                  <tr key={entry.id} className="border-b border-[#ecebf0]">
                     <td className="p-3">
                       {(
                         ledgerLabels[entry.type] ?? m.noddi_ledger_adjustment
@@ -179,7 +198,9 @@ export function CreditSummary() {
         )}
       </section>
       <section>
-        <h2 className="mb-1 font-hand text-2xl">{m.noddi_orders_title()}</h2>
+        <h2 className="mb-1 text-2xl font-extrabold tracking-[-0.03em]">
+          {m.noddi_orders_title()}
+        </h2>
         <p className="mb-3 text-sm text-muted-foreground">
           {m.noddi_orders_description()}
         </p>
@@ -193,14 +214,14 @@ export function CreditSummary() {
             </Button>
           </div>
         ) : !history.data?.length ? (
-          <p className="border-2 border-dashed border-black p-5">
+          <p className="sunburst-soft-band rounded-2xl border border-dashed border-[#b9aaff] p-5">
             {m.noddi_orders_empty()}
           </p>
         ) : (
-          <div className="overflow-x-auto border-2 border-black">
+          <div className="overflow-x-auto rounded-2xl border border-[#dedde3] bg-white shadow-[0_8px_24px_rgba(17,17,17,0.04)]">
             <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b-2 border-black">
+              <thead className="bg-[#f6f5f2]">
+                <tr className="border-b border-[#dedde3]">
                   <th className="p-3">{m.noddi_orders_product()}</th>
                   <th className="p-3">{m.noddi_orders_status()}</th>
                   <th className="p-3">{m.noddi_orders_id()}</th>
@@ -209,7 +230,7 @@ export function CreditSummary() {
               </thead>
               <tbody>
                 {history.data.map((order) => (
-                  <tr key={order.id} className="border-b">
+                  <tr key={order.id} className="border-b border-[#ecebf0]">
                     <td className="p-3">
                       {findPlanByPriceId(order.priceId)?.name ??
                         m.noddi_orders_unknown_product()}

@@ -46,7 +46,7 @@
   // https://developers.cloudflare.com/workers/configuration/routing/custom-domains/
   "routes": [
     {
-      "pattern": "tanstack.duoduohe.com",
+      "pattern": "sunburstai.online",
       "custom_domain": true
     }
   ],
@@ -64,7 +64,7 @@
     {
       "binding": "DB",
       "database_name": "duoduohe-tanstack",
-      "database_id": "dc34f04a-3445-4b5c-bf61-c4ec2328e239",
+      "database_id": "cac81d55-6fcd-45fe-ba8c-5fe8cfc3c156",
       "migrations_dir": "./src/db/migrations"
     }
   ],

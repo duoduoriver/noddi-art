@@ -24,11 +24,36 @@ export type OperationalSettings = {
     : number;
 };
 
+function getE2EOperationalSettings(): OperationalSettings | null {
+  if (!(import.meta.env.DEV === true && import.meta.env.MODE === 'e2e')) {
+    return null;
+  }
+
+  return {
+    generationEnabled: true,
+    gridCost: 2,
+    finalMediumCost: 10,
+    finalHighCost: 40,
+    revisionCost: 12,
+    dailyLimit: 100,
+    monthlyBudgetMicros: 10_000_000,
+    primaryGenerationLowMicros: 1,
+    primaryEditMediumMicros: 1,
+    primaryEditHighMicros: 1,
+    fallbackGenerationLowMicros: 1,
+    fallbackEditMediumMicros: 1,
+    fallbackEditHighMicros: 1,
+  };
+}
+
 const settingKeys = Object.keys(OPERATIONAL_SETTING_DEFAULTS) as Array<
   keyof OperationalSettings
 >;
 
 export async function getOperationalSettings(): Promise<OperationalSettings> {
+  const e2eSettings = getE2EOperationalSettings();
+  if (e2eSettings) return e2eSettings;
+
   const rows = await getDb()
     .select()
     .from(systemSettings)

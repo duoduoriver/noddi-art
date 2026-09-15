@@ -1,6 +1,6 @@
 ---
 name: tanstack-page-builder
-description: Create new marketing or content pages in duoduohe-tanstack from a short spec (keywords, route/path, reference content). Use when the user wants a new page, landing subpage, or content page without hand-writing boilerplate.
+description: "Create new marketing or content pages in this TanStack starter from a supplied route and brief."
 ---
 
 # TanStack Page Builder (New Pages)

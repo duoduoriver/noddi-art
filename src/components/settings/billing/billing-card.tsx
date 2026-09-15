@@ -22,10 +22,12 @@ import { websiteConfig } from '@/config/website';
 import { IconCircleCheck, IconClock, IconRefresh } from '@tabler/icons-react';
 import { useCallback } from 'react';
 /** Card container: full width, no bottom padding */
-const cardClass = cn('w-full overflow-hidden pt-6 pb-0 flex flex-col');
+const cardClass = cn(
+  'w-full overflow-hidden border-[#dedde3] bg-white pt-6 pb-0 flex flex-col shadow-[0_10px_28px_rgba(17,17,17,0.05)]'
+);
 /** Footer: right-aligned primary action, muted background */
 const footerClass = cn(
-  'mt-2 px-6 py-4 flex flex-wrap justify-end items-center gap-2 bg-muted rounded-none'
+  'mt-2 px-6 py-4 flex flex-wrap justify-end items-center gap-2 border-t border-[#ecebf0] bg-[#fbfbf8] rounded-none'
 );
 /**
  * Billing card: current plan and subscription status
@@ -162,7 +164,7 @@ export function BillingCard() {
       <CardContent className="space-y-4 flex-1">
         {/* Plan name and status badge (trialing | active) */}
         <div className="flex items-center justify-start space-x-4">
-          <div className="text-3xl font-medium">
+          <div className="text-3xl font-extrabold tracking-[-0.035em]">
             {currentPlanWithName?.name ??
               currentPlan?.id ??
               m.settings_billing_card_free()}

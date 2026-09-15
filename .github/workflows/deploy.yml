@@ -2,29 +2,70 @@ name: Deploy to Cloudflare Workers
 
 on:
   workflow_dispatch:
+  pull_request:
   push:
     branches:
       - main
 
-# Ensure only one deployment runs at a time
+permissions:
+  contents: read
+
+# Ensure only one production deployment runs at a time.
 concurrency:
-  group: deploy-production
+  group: deploy-production-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    name: Build & Deploy
+  check:
+    name: Check & Build
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       NODE_OPTIONS: '--max-old-space-size=4096'
-      # --- Cloudflare credentials (needed by cf-typegen in postinstall) ---
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check
+        run: pnpm check
+
+      - name: Build
+        run: pnpm build
+
+  deploy:
+    name: Build & Deploy
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NODE_OPTIONS: '--max-old-space-size=4096'
+      # Needed by cf-typegen during postinstall and Wrangler deployment.
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_DATABASE_ID: ${{ secrets.CLOUDFLARE_DATABASE_ID }}
-      # --- Client-side (VITE_*) env vars baked into the build ---
+      # Client-side build variables. Runtime secrets remain in Cloudflare.
       VITE_BASE_URL: ${{ secrets.VITE_BASE_URL }}
       VITE_PAYMENT_PROVIDER: ${{ secrets.VITE_PAYMENT_PROVIDER }}
+      VITE_WAFFO_PRODUCT_PRO_MONTHLY: ${{ secrets.VITE_WAFFO_PRODUCT_PRO_MONTHLY }}
+      VITE_WAFFO_PRODUCT_STUDIO_MONTHLY: ${{ secrets.VITE_WAFFO_PRODUCT_STUDIO_MONTHLY }}
+      VITE_WAFFO_PRODUCT_LAUNCH_PACK: ${{ secrets.VITE_WAFFO_PRODUCT_LAUNCH_PACK }}
+      VITE_WAFFO_PRODUCT_MAKER_PACK: ${{ secrets.VITE_WAFFO_PRODUCT_MAKER_PACK }}
+      VITE_WAFFO_PRODUCT_STUDIO_PACK: ${{ secrets.VITE_WAFFO_PRODUCT_STUDIO_PACK }}
+      VITE_SUPPORT_EMAIL: ${{ secrets.VITE_SUPPORT_EMAIL }}
+      VITE_TURNSTILE_SITE_KEY: ${{ secrets.VITE_TURNSTILE_SITE_KEY }}
       VITE_STRIPE_PRICE_PRO_MONTHLY: ${{ secrets.VITE_STRIPE_PRICE_PRO_MONTHLY }}
       VITE_STRIPE_PRICE_PRO_YEARLY: ${{ secrets.VITE_STRIPE_PRICE_PRO_YEARLY }}
       VITE_STRIPE_PRICE_LIFETIME: ${{ secrets.VITE_STRIPE_PRICE_LIFETIME }}

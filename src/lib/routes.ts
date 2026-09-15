@@ -10,6 +10,8 @@ export const Routes = {
   AppIconResizer: '/app-icon-resizer',
   AndroidMipmapGenerator: '/android-mipmap-generator',
   Guides: '/guides',
+  Tools: '/#tools',
+  Gallery: '/#gallery',
   IosAppIconSizes: '/ios-app-icon-sizes',
   AndroidAppIconSizes: '/android-app-icon-sizes',
   AndroidAdaptiveIconSafeZone: '/android-adaptive-icon-safe-zone',

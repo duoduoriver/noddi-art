@@ -167,7 +167,19 @@ These flows should be added after their dependencies are made deterministic:
 | Area | Reason |
 |---|---|
 | Transactional email | Requires a fake mail provider or captured verification links. |
-| AI tools | Requires provider mocks or stable fake responses to avoid cost and flake. |
+
+## App Icon Generation Coverage
+
+**File:** `specs/generation.spec.ts` | **Priority:** P0
+
+Runs only in local E2E mode with a deterministic in-process image provider. It
+never calls a paid image API. The fake provider still exercises the real queue
+consumer, D1/R2 persistence, image cropping, export builders, authenticated
+download route, and free-vs-paid export policy.
+
+| # | Test name | Flow |
+|---|---|---|
+| 1 | Free generation and export journey | Register and sign in, generate one four-concept sheet, choose a candidate, download 512px PNG and WebP, create and inspect an Android + Web developer ZIP, verify AVIF remains paid-only, then verify 1024px and iOS + macOS exports cannot create their shared HD master after the free two credits have been consumed. |
 
 ## Stripe Payment Coverage
 

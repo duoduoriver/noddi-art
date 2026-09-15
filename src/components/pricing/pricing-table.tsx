@@ -1,5 +1,4 @@
 import { authClient } from '@/auth/client';
-import { SketchFrame } from '@/components/noddi/sketch-frame';
 import { PricingCard } from '@/components/pricing/pricing-card';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { formatPrice } from '@/lib/formatter';
@@ -52,31 +51,21 @@ function CreditPacks({
   if (!selectedPlan || !selectedPrice) return null;
 
   return (
-    <SketchFrame
-      color="#83bd00"
-      className="min-h-full overflow-visible bg-white"
-    >
-      <aside className="relative flex min-h-full flex-col px-6 py-7 text-center">
-        <span className="absolute right-3 top-3 z-30 rotate-2">
-          <span
-            aria-hidden="true"
-            className="brush-highlight absolute inset-0 bg-[#ff6fc7]"
-          />
-          <span className="relative z-10 block px-3 py-0.5 font-hand text-xs font-bold">
-            TOP UP
-          </span>
+    <aside className="sunburst-soft-band relative grid gap-7 rounded-2xl border-2 border-[#111111] p-6 shadow-[4px_4px_0_#9b7bff] md:grid-cols-[0.75fr_1.25fr] md:items-center md:p-8">
+      <div>
+        <span className="sunburst-eyebrow">
+          <IconSparkles className="mr-1 size-3.5" /> Top up anytime
         </span>
-        <img
-          src="/pricing/credit-packs.png"
-          alt=""
-          className="mx-auto size-24 object-contain"
-        />
-        <h2 className="mt-4 font-hand text-3xl leading-none">CREDIT PACKS</h2>
-        <p className="mt-3 text-sm leading-5 text-[#5f5f5f]">
+        <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.035em]">
+          Credit packs
+        </h2>
+        <p className="mt-3 max-w-md text-sm leading-6 text-[#666]">
           Buy once, use your credits whenever inspiration hits.
         </p>
+      </div>
 
-        <div className="mt-5 border-y-2 border-black py-2">
+      <div>
+        <div className="grid gap-2 rounded-xl border border-[#d8d7dd] bg-white p-2 sm:grid-cols-3">
           {plans.map((plan) => {
             const price = getOneTimePrice(plan);
             const isSelected = plan.id === selectedPlan.id;
@@ -89,9 +78,9 @@ function CreditPacks({
                 aria-pressed={isSelected}
                 onClick={() => setSelectedPlanId(plan.id)}
                 className={cn(
-                  'flex w-full items-center justify-between gap-3 px-2 py-2 text-left text-sm font-semibold transition-colors',
-                  'hover:bg-[#c6ff5b]/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9b7bff]',
-                  isSelected && 'bg-[#c6ff5b]'
+                  'flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-3 text-left text-sm font-semibold transition-colors',
+                  'border-transparent hover:border-[#111] hover:bg-[#f6f5f2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9b7bff]',
+                  isSelected && 'border-[#111] bg-[#c6ff5b]'
                 )}
               >
                 <span className="flex items-center gap-2">
@@ -104,34 +93,31 @@ function CreditPacks({
           })}
         </div>
 
-        <div className="mt-auto pt-7">
+        <div className="mt-4">
           {hasValidPriceId && isAuthenticated ? (
             <CheckoutButton
               planId={selectedPlan.id}
               priceId={selectedPrice.priceId}
               metadata={metadata}
-              className="h-14 w-full text-lg font-bold"
+              className="h-12 w-full text-base"
             >
               BUY NOW <IconArrowRight className="ml-2 text-[#c6ff5b]" />
             </CheckoutButton>
           ) : hasValidPriceId ? (
             <Link
               to={Routes.Login}
-              className={cn(
-                buttonVariants(),
-                'brush-button h-14 w-full text-lg font-bold'
-              )}
+              className={cn(buttonVariants(), 'h-12 w-full text-base')}
             >
               BUY NOW <IconArrowRight className="ml-2 text-[#c6ff5b]" />
             </Link>
           ) : (
-            <Button disabled className="h-14 w-full font-hand text-lg">
+            <Button disabled className="h-12 w-full text-base">
               COMING SOON
             </Button>
           )}
         </div>
-      </aside>
-    </SketchFrame>
+      </div>
+    </aside>
   );
 }
 
@@ -165,7 +151,7 @@ export function PricingTable({
       <h2 id="plans-heading" className="sr-only">
         Pricing plans
       </h2>
-      <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-3">
         {subscriptionPlans.map((plan) => (
           <PricingCard
             key={plan.id}
@@ -176,10 +162,10 @@ export function PricingTable({
             isCurrentPlan={currentPlanId === plan.id}
           />
         ))}
-        {creditPacks.length > 0 ? (
-          <CreditPacks plans={creditPacks} metadata={metadata} />
-        ) : null}
       </div>
+      {creditPacks.length > 0 ? (
+        <CreditPacks plans={creditPacks} metadata={metadata} />
+      ) : null}
     </section>
   );
 }

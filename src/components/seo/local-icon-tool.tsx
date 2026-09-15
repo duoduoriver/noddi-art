@@ -595,9 +595,9 @@ export function LocalIconTool({ mode }: { mode: ToolMode }) {
   }
 
   return (
-    <section className="mt-12 border-2 border-black bg-[#f7f7f3] p-5 shadow-[5px_5px_0_#9b7bff] sm:p-7">
+    <section className="sunburst-soft-band mt-12 rounded-2xl border-2 border-black p-5 shadow-[4px_4px_0_#9b7bff] sm:p-7">
       <div className="grid gap-7 lg:grid-cols-[0.65fr_1.35fr] lg:items-center">
-        <div className="flex min-h-56 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-[#9c9a93] bg-white p-4">
+        <div className="flex min-h-56 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-[#bdbbc5] bg-white p-4">
           {previewUrl ? (
             <img
               src={previewUrl}
@@ -616,7 +616,7 @@ export function LocalIconTool({ mode }: { mode: ToolMode }) {
 
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <span className="rounded-full bg-[#c6ff5b] px-3 py-1 text-xs font-bold uppercase tracking-[0.12em]">
+            <span className="rounded-full border border-[#a7d83f] bg-[#eaffbd] px-3 py-1 text-xs font-bold uppercase tracking-[0.12em]">
               Free · local processing
             </span>
             <span className="text-xs text-muted-foreground">
@@ -631,7 +631,7 @@ export function LocalIconTool({ mode }: { mode: ToolMode }) {
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <label className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-black bg-white px-4 text-sm font-bold shadow-[2px_2px_0_#111] hover:bg-[#f1f1ed]">
+            <label className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-black bg-white px-4 text-sm font-bold transition-transform hover:-translate-y-0.5 hover:bg-[#f6f5f2]">
               <IconUpload className="size-4" />
               {file ? 'Choose another image' : 'Choose image'}
               <input
@@ -650,7 +650,7 @@ export function LocalIconTool({ mode }: { mode: ToolMode }) {
               type="button"
               onClick={createPackage}
               disabled={!file || busy}
-              className="brush-button inline-flex min-h-12 items-center justify-center gap-2 px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-45"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-black bg-[#c6ff5b] px-5 text-sm font-bold text-black shadow-[2px_2px_0_#111] transition-all hover:-translate-y-0.5 hover:bg-[#b6f13e] disabled:cursor-not-allowed disabled:opacity-45"
             >
               {busy ? (
                 <IconLoader2 className="size-4 animate-spin" />

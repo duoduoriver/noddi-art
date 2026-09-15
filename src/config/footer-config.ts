@@ -14,7 +14,7 @@ export function getFooterLinks(): MenuItemConfig[] {
           external: false,
         },
         { title: m.nav_pricing(), href: Routes.Pricing, external: false },
-        { title: m.nav_faq(), href: Routes.Faqs, external: false },
+        { title: 'Gallery', href: Routes.Gallery, external: false },
       ],
     },
     {

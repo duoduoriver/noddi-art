@@ -1,6 +1,6 @@
 ---
 name: tanstack-quick-start
-description: Automate first-pass customization of a new duoduohe-tanstack project from a short project brief (app name, domain/app URL, product description/features, reference links, and branding preferences). Use when the user says they are starting a new TanStack project, bootstrapping the starter, or customizing branding and landing content.
+description: "Customize a new TanStack starter’s branding, domain, landing copy, and legal pages from a project brief."
 ---
 
 # TanStack Quick Start (Project Bootstrap)

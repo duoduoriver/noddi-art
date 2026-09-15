@@ -21,11 +21,15 @@ function ProjectPage() {
     <>
       <DashboardHeader
         breadcrumbs={[
-          { label: 'noddi', isCurrentPage: false },
+          {
+            label: 'Projects',
+            href: '/dashboard/projects',
+            isCurrentPage: false,
+          },
           { label: 'Project', isCurrentPage: true },
         ]}
       />
-      <main className="mx-auto w-full max-w-6xl p-4 lg:p-8">
+      <main className="mx-auto w-full max-w-6xl p-5 lg:p-8">
         <ProjectWorkspace projectId={projectId} />
       </main>
     </>

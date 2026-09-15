@@ -23,37 +23,21 @@ function PricingPage() {
   const currentPlan = planData?.currentPlan ?? null;
 
   return (
-    <main className="overflow-hidden bg-white">
-      <Container className="relative px-5 pb-16 pt-2 lg:px-10 lg:pb-20 lg:pt-4">
-        <span
-          aria-hidden="true"
-          className="absolute left-[4%] top-24 -rotate-12 font-hand text-5xl text-[#9b7bff]"
-        >
-          ✦
-        </span>
-        <span
-          aria-hidden="true"
-          className="absolute right-[5%] top-44 rotate-12 font-hand text-5xl text-[#ff6fc7]"
-        >
-          ♥
-        </span>
-
-        <header className="relative mx-auto mb-10 max-w-2xl text-center">
-          <h1 className="font-hand text-6xl leading-[0.9] tracking-wide sm:text-7xl">
-            <span className="relative inline-block px-3">
-              <span
-                aria-hidden="true"
-                className="brush-highlight absolute -left-2 -right-2 bottom-1 top-5 -z-0 -rotate-1 bg-[#c6ff5b]"
-              />
-              <span className="relative z-10">PRICING</span>
-            </span>
+    <main className="sunburst-shell overflow-hidden">
+      <Container className="relative px-5 pb-20 pt-14 lg:px-10 lg:pb-24 lg:pt-20">
+        <header className="relative mx-auto mb-12 max-w-3xl text-center">
+          <span className="sunburst-eyebrow mx-auto">Simple, fair pricing</span>
+          <h1 className="sunburst-heading mt-5">
+            Plans for every kind of builder
           </h1>
-          <p className="mt-6 text-lg leading-8 text-[#343434]">
-            Choose a plan that gives your next app icon idea room to grow.
+          <p className="sunburst-copy mx-auto mt-5 max-w-2xl">
+            Start free with the full concept workflow, then upgrade when you
+            need HD masters, iOS, macOS, or more monthly generation room.
           </p>
         </header>
 
         <PricingTable
+          className="space-y-8"
           currentPlan={currentPlan}
           metadata={userId ? { userId } : undefined}
         />

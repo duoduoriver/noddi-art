@@ -20,14 +20,19 @@ function GenerationsPage() {
           { label: m.noddi_admin_generations(), isCurrentPage: true },
         ]}
       />
-      <main className="space-y-6 p-4 lg:p-8">
-        <h1 className="font-hand text-4xl">{m.noddi_admin_generations()}</h1>
-        <p className="border-l-4 border-[#ff6fc7] bg-[#ff6fc7]/10 p-4">
+      <main className="space-y-6 p-5 lg:p-8">
+        <div>
+          <span className="sunburst-eyebrow">Admin</span>
+          <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.04em]">
+            {m.noddi_admin_generations()}
+          </h1>
+        </div>
+        <p className="rounded-xl border border-[#f2b6d6] bg-[#fff0f7] p-4 text-sm">
           {m.noddi_admin_disabled()}
         </p>
-        <div className="overflow-x-auto border-2 border-black">
+        <div className="overflow-x-auto rounded-2xl border border-[#dedde3] bg-white shadow-[0_10px_28px_rgba(17,17,17,0.05)]">
           <table className="w-full text-left text-sm">
-            <thead>
+            <thead className="bg-[#f6f5f2]">
               <tr>
                 <th className="p-3">Job</th>
                 <th className="p-3">Operation</th>
@@ -37,7 +42,7 @@ function GenerationsPage() {
             </thead>
             <tbody>
               {data?.jobs.map((job) => (
-                <tr key={job.id} className="border-t">
+                <tr key={job.id} className="border-t border-[#ecebf0]">
                   <td className="p-3 font-mono text-xs">{job.id}</td>
                   <td className="p-3">{job.operation}</td>
                   <td className="p-3">{job.status}</td>

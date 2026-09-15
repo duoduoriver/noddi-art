@@ -11,11 +11,11 @@ console.log("[server-entry]: using custom server entry in 'src/server.ts'");
 
 export default {
   async fetch(request: Request) {
-    if (import.meta.env.DEV) return handler.fetch(request);
+    const resolve = (currentRequest: Request) =>
+      handler.fetch(currentRequest, { context: { fromFetch: true } });
+    if (import.meta.env.DEV) return resolve(request);
     const { localeMiddleware } = await import('@/locale/middleware');
-    return localeMiddleware(request, (localizedRequest) =>
-      handler.fetch(localizedRequest)
-    );
+    return localeMiddleware(request, resolve);
   },
   async queue(batch: Parameters<typeof consumeNoddiJobs>[0]) {
     // Keep image codecs and queue-only dependencies off the HTTP dev path.

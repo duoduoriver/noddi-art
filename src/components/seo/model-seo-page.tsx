@@ -30,18 +30,12 @@ export function ModelSeoPage({
   ctaLabel?: string;
 }) {
   return (
-    <main className="bg-white text-[#111111]">
-      <Container className="px-5 py-16 lg:px-10 lg:py-24">
+    <main className="sunburst-shell">
+      <Container className="px-5 py-14 lg:px-10 lg:py-20">
         <div className="mx-auto max-w-5xl">
-          <p className="text-sm font-bold uppercase tracking-[0.22em] text-[#6548d8]">
-            {eyebrow}
-          </p>
-          <h1 className="mt-4 max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            {title}
-          </h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-muted-foreground">
-            {description}
-          </p>
+          <p className="sunburst-eyebrow">{eyebrow}</p>
+          <h1 className="sunburst-heading mt-5 max-w-4xl">{title}</h1>
+          <p className="sunburst-copy mt-5 max-w-3xl">{description}</p>
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Button
@@ -62,14 +56,14 @@ export function ModelSeoPage({
             {points.map((point) => (
               <li
                 key={point}
-                className="border-2 border-black bg-white p-5 text-sm leading-6 shadow-[3px_3px_0_#c6ff5b]"
+                className="sunburst-card-strong p-5 text-sm leading-6"
               >
                 {point}
               </li>
             ))}
           </ul>
 
-          <p className="mt-8 rounded-xl border border-[#d8d6d0] bg-[#f7f7f3] p-4 text-sm leading-6 text-muted-foreground">
+          <p className="mt-8 rounded-2xl border border-[#d8d7dd] bg-[#fbfbf8] p-4 text-sm leading-6 text-muted-foreground">
             Sunburst AI is an independent developer tool and is not affiliated
             with OpenAI. Availability of specific underlying image models may
             vary by generation configuration.

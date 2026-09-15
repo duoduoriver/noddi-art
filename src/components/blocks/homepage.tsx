@@ -59,8 +59,9 @@ const steps = [
   },
   {
     number: '3.',
-    title: 'Refine',
-    description: 'Turn a candidate into a final and make one focused revision.',
+    title: 'Pick',
+    description:
+      'Choose the strongest concept and prepare an HD master when needed.',
     icon: IconAdjustments,
   },
   {
@@ -144,71 +145,62 @@ function SectionTitle({ children }: { children: ReactNode }) {
 export function HomePage() {
   return (
     <div className="overflow-hidden bg-white">
-      <section className="relative isolate w-full overflow-hidden py-20 pl-5 pr-0 lg:flex lg:aspect-[1650/935] lg:items-center lg:py-0 lg:pl-10">
-        <HomeImage
-          avif="/home/hero.avif"
-          webp="/home/hero.webp"
-          alt="Sunburst AI app icon generator preview for iOS, Android, macOS and Web"
-          className="absolute inset-0 -z-10 block h-full w-full"
-          imageClassName="h-full w-full object-contain object-right"
-        />
-        <span
-          aria-hidden="true"
-          className="absolute left-[4%] top-11 -rotate-6 bg-[#9b7bff] px-4 py-1 font-hand text-xl"
-        >
-          SUNBURST AI
-        </span>
-        <div className="relative z-10 flex max-w-xl flex-col justify-center pt-10 lg:pt-0">
-          <span
-            aria-hidden="true"
-            className="absolute -left-3 top-5 text-4xl text-[#9b7bff]"
-          >
-            ✦
-          </span>
-          <h1 className="max-w-xl font-hand text-6xl leading-[0.87] tracking-wide sm:text-7xl lg:text-8xl">
-            APP ICON
-            <span className="relative mt-3 block w-fit px-2">
-              <span className="absolute inset-x-0 bottom-1 top-2 -z-10 -rotate-1 bg-[#c6ff5b]" />
-              GENERATOR
-            </span>
-          </h1>
-          <p className="mt-7 max-w-lg text-lg leading-8 text-[#343434]">
-            Generate polished app icons from one clear brief, refine the best
-            direction, then export developer-ready assets for iOS, Android,
-            macOS, favicons, and PWA.
-          </p>
-          <div className="mt-8 flex max-w-lg flex-col gap-3 sm:flex-row">
-            <div className="flex min-h-14 flex-1 items-center border-2 border-black bg-white px-4 text-sm text-muted-foreground shadow-[3px_3px_0_#111]">
-              Focus timer / productivity
-            </div>
-            <Button
-              render={<Link to="/generate" />}
-              className="shrink-0 text-lg font-bold"
-              style={{ minHeight: 64 }}
-            >
-              {m.noddi_home_cta()}
-              <IconArrowRight className="ml-2 text-[#c6ff5b]" />
-            </Button>
+      <section className="relative isolate flex min-h-[calc(100svh-72px)] w-full items-start justify-center overflow-hidden px-5 pb-20 pt-16 sm:pt-20 lg:min-h-[820px] lg:px-10 lg:pb-24 lg:pt-20">
+        <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#b8a7ff] bg-[#f5f2ff] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#6f50ff] shadow-[0_2px_8px_rgba(111,80,255,0.08)]">
+            <IconSparkles className="size-3.5" stroke={2} />
+            Built for developers
           </div>
-          <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-sm font-semibold">
+
+          <h1 className="mt-5 max-w-[780px] text-balance font-sans text-5xl font-black leading-[0.94] tracking-[-0.045em] text-[#151515] sm:text-6xl lg:text-[68px] xl:text-[76px]">
+            <span className="block">AI App Icon</span>
+            <span className="block">Generator for</span>
+            <span className="block">iOS, Android</span>
+            <span className="block">&amp; Web</span>
+          </h1>
+
+          <p className="mt-7 max-w-[650px] text-balance text-base leading-7 text-[#6d6d73] sm:text-lg sm:leading-8">
+            Generate four focused concepts, pick the strongest direction, create
+            an HD master when you need it, and export developer-ready icon
+            assets in minutes.
+          </p>
+
+          <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row sm:gap-4">
+            <Link
+              to="/generate"
+              className="inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border-2 border-[#111] bg-[#bfff3f] px-7 py-3 text-base font-bold text-[#111] shadow-[0_3px_0_#111] transition-[transform,background-color,box-shadow] hover:-translate-y-0.5 hover:bg-[#b3f532] hover:shadow-[0_5px_0_#111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7a5cff] focus-visible:ring-offset-2 sm:w-auto"
+            >
+              Generate Your Icon
+              <IconArrowRight className="size-4" stroke={2.2} />
+            </Link>
+            <Link
+              to="/app-icon-resizer"
+              className="inline-flex min-h-14 w-full items-center justify-center rounded-2xl border-2 border-[#111] bg-white px-7 py-3 text-base font-bold text-[#111] transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-[#f7f7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7a5cff] focus-visible:ring-offset-2 sm:w-auto"
+            >
+              Explore Free Tools
+            </Link>
+          </div>
+
+          <ul className="mt-8 flex max-w-2xl flex-col items-center justify-center gap-3 text-sm font-semibold text-[#252525] sm:flex-row sm:flex-wrap sm:gap-x-8 sm:gap-y-3">
             {[
-              'AI-Powered',
-              'Multiple Styles',
-              'Editable',
-              'Developer Exports',
+              '4 concept variations',
+              'iOS · Android · Web · macOS',
+              'Free PNG / WebP + Android / Web',
             ].map((item) => (
-              <li key={item} className="flex items-center gap-2">
-                <IconCircleCheck className="size-5 fill-[#c6ff5b] text-black" />
-                {item}
+              <li key={item} className="flex items-center gap-2.5">
+                <IconCircleCheck className="size-5 shrink-0 fill-[#bfff3f] text-[#111]" />
+                <span>{item}</span>
               </li>
             ))}
           </ul>
-          <a
-            href="/models/gpt-image-2-5-sunburst"
-            className="mt-5 w-fit text-sm font-bold underline decoration-2 underline-offset-4"
-          >
-            Explore the GPT-Image-2.5 Sunburst app icon workflow →
-          </a>
+
+          <div className="mt-10 max-w-[620px] rounded-[22px] border border-[#deded8] bg-[#fbfbf6] px-5 py-4 text-left text-sm leading-6 text-[#707076] shadow-[0_8px_24px_rgba(0,0,0,0.03)] sm:px-6">
+            <strong className="font-bold text-[#242424]">
+              From idea to shipping asset:
+            </strong>{' '}
+            the generator and export tools are designed around a developer
+            workflow, not a design-suite learning curve.
+          </div>
         </div>
       </section>
 
@@ -338,7 +330,7 @@ export function HomePage() {
               {
                 question: 'What is Sunburst AI?',
                 answer:
-                  'Sunburst AI is an AI app icon generator for developers. Start from a product brief, compare icon directions, refine a favorite, and export assets for shipping.',
+                  'Sunburst AI is an AI app icon generator for developers. Start from a product brief, compare four icon directions, pick a favorite, prepare an HD master when needed, and export assets for shipping.',
               },
               {
                 question: 'Do I need design skills to use Sunburst AI?',

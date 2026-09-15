@@ -3,6 +3,7 @@ import {
   generateVersion,
   getExportStatus,
   getProject,
+  listProjects,
   queueExport,
   setProjectReferences,
   startProject,
@@ -53,14 +54,66 @@ type ReferenceImage = {
 type StyleOption = {
   id: string;
   label: string;
-  accent: string;
+  prompt: string;
+  image: string;
 };
 
 const STYLE_OPTIONS: StyleOption[] = [
-  { id: 'sketch', label: 'Sketch', accent: '#9b7bff' },
-  { id: 'graffiti', label: 'Graffiti', accent: '#ff6fc7' },
-  { id: 'minimal', label: 'Minimal', accent: '#c6ff5b' },
-  { id: 'doodle', label: 'Doodle', accent: '#6fc1ff' },
+  {
+    id: 'neo-brutalism-bold-flat',
+    label: 'Neo Brutalism + Bold Flat',
+    prompt: [
+      'thick bold shapes, flat color blocking, strong contrast, graphic simplicity,',
+      'direct expressive visual language, energetic, assertive, modern, graphic',
+    ].join(' '),
+    image: '/styles/neo-brutalism-bold-flat.webp',
+  },
+  {
+    id: 'organic-minimal-soft-pastel-gradient',
+    label: 'Organic Minimal + Soft Pastel Gradient',
+    prompt: [
+      'soft flowing forms, light visual weight, smooth curves, airy spacing,',
+      'gentle pastel gradients, calm, fresh, friendly, refined',
+    ].join(' '),
+    image: '/styles/organic-minimal-soft-pastel-gradient.webp',
+  },
+  {
+    id: 'pixel-art-esports-emblem',
+    label: 'Pixel Art + Esports Emblem',
+    prompt: [
+      'chunky pixel details, emblem-like structure, bold outlines, strong symmetry,',
+      'playful competitive-game aesthetic, nostalgic, high-energy, iconic, game-ready',
+    ].join(' '),
+    image: '/styles/pixel-art-esports-emblem.webp',
+  },
+  {
+    id: 'organic-paper-cut',
+    label: 'Organic + Paper Cut',
+    prompt: [
+      'layered paper-cut construction, tactile depth, organic shapes,',
+      'crafted illustration style, natural, artistic, peaceful, visually textured',
+    ].join(' '),
+    image: '/styles/organic-paper-cut.webp',
+  },
+  {
+    id: 'hand-drawn-friendly-illustration',
+    label: 'Hand-drawn + Friendly Illustration',
+    prompt: [
+      'charming imperfect lines, illustrated forms, approachable personality,',
+      'soft shading, warm human touch, curious, playful, creative, friendly',
+    ].join(' '),
+    image: '/styles/hand-drawn-friendly-illustration.webp',
+  },
+  {
+    id: 'skeuomorphic-soft-glossy-3d',
+    label: 'Skeuomorphic + Soft Glossy 3D',
+    prompt: [
+      'realistic yet simplified materials, soft glossy surfaces, dimensional lighting,',
+      'polished highlights, rich tactile depth, visually rich, premium, modern,',
+      'slightly realistic',
+    ].join(' '),
+    image: '/styles/skeuomorphic-soft-glossy-3d.webp',
+  },
 ];
 
 const COLOR_OPTIONS = [
@@ -94,6 +147,21 @@ const PLATFORM_OPTIONS: Array<{
   { value: 'web', label: 'Web', description: 'Favicon + PWA + maskable' },
   { value: 'macos', label: 'macOS', description: 'Xcode + ICNS' },
 ];
+
+const WORKFLOW_STEPS = [
+  ['Describe', 'Your idea'],
+  ['Generate', '4 concepts'],
+  ['Pick', 'Choose favorite'],
+  ['HD Master', 'Upscale when needed'],
+  ['Export', 'Download assets'],
+] as const;
+
+const PROMPT_PLACEHOLDERS = [
+  'A playful weather app icon with a smiling sun and soft clouds.',
+  'A focused finance app icon with a rising chart and bold contrast.',
+  'A calming meditation app icon with a moon, stars, and pastel tones.',
+  'A retro music app icon with a cassette tape and neon colors.',
+] as const;
 
 const CHECKERBOARD_STYLE: CSSProperties = {
   backgroundColor: '#ffffff',
@@ -133,38 +201,12 @@ function errorMessage(error: unknown) {
 
 function sectionTitle(number: string, title: string) {
   return (
-    <h2 className="flex items-center gap-2 font-hand text-lg leading-none">
-      <span className="flex size-7 items-center justify-center rounded-full bg-[#9b7bff] text-base text-black shadow-[2px_2px_0_#111]">
+    <h2 className="flex items-center gap-2.5 text-sm font-extrabold uppercase tracking-[0.08em]">
+      <span className="flex size-7 items-center justify-center rounded-full bg-[#7a5cff] text-xs font-extrabold text-white">
         {number}
       </span>
       {title}
     </h2>
-  );
-}
-
-function StyleArt({ accent, selected }: { accent: string; selected: boolean }) {
-  return (
-    <span className="relative flex h-11 w-14 items-center justify-center">
-      {selected ? (
-        <span
-          aria-hidden="true"
-          className="absolute inset-0 rotate-[-12deg] rounded-full border-[3px]"
-          style={{ borderColor: accent }}
-        />
-      ) : null}
-      <span className="relative flex h-7 w-10 items-center justify-center rounded-[48%] bg-black text-[17px] font-bold tracking-[-0.2em] text-white">
-        × ×
-      </span>
-      {selected ? (
-        <span
-          aria-hidden="true"
-          className="absolute -right-0.5 -top-0.5 text-lg leading-none"
-          style={{ color: accent }}
-        >
-          ✦
-        </span>
-      ) : null}
-    </span>
   );
 }
 
@@ -185,10 +227,9 @@ export function GenerateForm({
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
   const hydratedProjectId = useRef<string | null>(null);
-  const [prompt, setPrompt] = useState(
-    'A friendly black app icon with X eyes in a hand-drawn sketch style.'
-  );
-  const [styleId, setStyleId] = useState('sketch');
+  const [prompt, setPrompt] = useState('');
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [styleId, setStyleId] = useState('neo-brutalism-bold-flat');
   const [color, setColor] = useState('#9b7bff');
   const [backgroundMode, setBackgroundMode] = useState<'transparent' | 'solid'>(
     'transparent'
@@ -229,6 +270,13 @@ export function GenerateForm({
       )
         ? 2_000
         : false,
+  });
+
+  const projectHistoryQuery = useQuery({
+    queryKey: ['noddi-projects'],
+    queryFn: () => listProjects(),
+    enabled: Boolean(session?.user),
+    staleTime: 30_000,
   });
 
   const exportQuery = useQuery({
@@ -365,6 +413,16 @@ export function GenerateForm({
     hdMasterFailure ??
     exportFailure ??
     (projectQuery.error ? 'Could not load the generation status.' : null);
+  const workflowStep =
+    exportQuery.data?.status === 'succeeded'
+      ? 5
+      : hdMasterReady
+        ? 4
+        : selectedAsset
+          ? 3
+          : generationVersions.length
+            ? 2
+            : 1;
 
   useEffect(() => {
     if (!generationVersions.length) return;
@@ -390,6 +448,14 @@ export function GenerateForm({
     setSelectedVersionId(observedJob.outputVersionId);
     setSelectedCandidate('A');
   }, [observedJob?.outputVersionId, observedJob?.status]);
+
+  useEffect(() => {
+    if (prompt) return;
+    const interval = window.setInterval(() => {
+      setPlaceholderIndex((index) => (index + 1) % PROMPT_PLACEHOLDERS.length);
+    }, 3_500);
+    return () => window.clearInterval(interval);
+  }, [prompt]);
 
   useEffect(() => {
     if (!projectData || hydratedProjectId.current === projectData.project.id)
@@ -430,11 +496,13 @@ export function GenerateForm({
           }
         }
       } else {
-        if (
-          stored.style &&
-          STYLE_OPTIONS.some((option) => option.id === stored.style)
-        )
-          setStyleId(stored.style);
+        const style = STYLE_OPTIONS.find(
+          (option) =>
+            option.id === stored.style ||
+            option.label === stored.style ||
+            option.prompt === stored.style
+        );
+        if (style) setStyleId(style.id);
         if (stored.primaryColor?.startsWith('#')) setColor(stored.primaryColor);
         if (stored.background === 'transparent') {
           setBackgroundMode('transparent');
@@ -535,9 +603,11 @@ export function GenerateForm({
   }
 
   function generationSettings() {
+    const style =
+      STYLE_OPTIONS.find((option) => option.id === styleId) ?? STYLE_OPTIONS[0];
     return {
       prompt: prompt.trim(),
-      style: styleId,
+      style: style.prompt,
       primaryColor: color,
       background:
         backgroundMode === 'transparent'
@@ -767,10 +837,51 @@ export function GenerateForm({
   return (
     <form
       onSubmit={submit}
-      className="mx-auto w-full max-w-[1500px] px-4 pb-4 pt-2 lg:px-6"
+      className="mx-auto w-full max-w-[1600px] px-4 pb-8 pt-5 lg:px-6"
     >
-      <div className="grid gap-3 sm:gap-4 lg:grid-cols-[276px_minmax(0,1fr)] xl:grid-cols-[276px_minmax(0,1fr)_276px]">
-        <SketchFrame color="#d8d6d0" className="bg-white p-3 sm:p-4">
+      <div className="mb-3 overflow-x-auto rounded-xl border border-[#dedde3] bg-white px-3 py-2.5 shadow-[0_6px_18px_rgba(17,17,17,0.035)]">
+        <div className="mx-auto flex min-w-[560px] max-w-3xl items-start justify-between">
+          {WORKFLOW_STEPS.map(([label, hint], index) => {
+            const step = index + 1;
+            const active = workflowStep >= step;
+            return (
+              <div
+                key={label}
+                className="flex min-w-0 flex-1 items-start last:flex-none"
+              >
+                <div className="min-w-[72px] text-center">
+                  <span
+                    className={cn(
+                      'mx-auto flex size-6 items-center justify-center rounded-full border-2 text-[10px] font-extrabold transition-colors',
+                      active
+                        ? 'border-[#7a5cff] bg-[#7a5cff] text-white'
+                        : 'border-[#d8d7dd] bg-[#f6f5f2] text-[#777]'
+                    )}
+                  >
+                    {step}
+                  </span>
+                  <p className="mt-1 text-[11px] font-extrabold leading-4">
+                    {label}
+                  </p>
+                  <p className="text-[9px] leading-3.5 text-[#777]">{hint}</p>
+                </div>
+                {step < WORKFLOW_STEPS.length ? (
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'mt-3 h-px flex-1',
+                      workflowStep > step ? 'bg-[#7a5cff]' : 'bg-[#dedde3]'
+                    )}
+                  />
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)_320px]">
+        <section className="rounded-2xl border border-[#dedde3] bg-[#fbfbf8] p-4 shadow-[0_10px_28px_rgba(17,17,17,0.05)] sm:p-5">
           <div className="space-y-4">
             {sectionTitle('1', 'SETTINGS')}
             <div className="space-y-2">
@@ -782,16 +893,27 @@ export function GenerateForm({
                   {prompt.length}/1500
                 </span>
               </div>
-              <Textarea
-                id="prompt"
-                value={prompt}
-                onChange={(event) => setPrompt(event.target.value)}
-                required
-                minLength={4}
-                maxLength={1_500}
-                className="min-h-20 resize-y border-[#bdbbb4] text-sm leading-5 focus-visible:border-[#9b7bff] focus-visible:ring-[#9b7bff]/30"
-                placeholder="Describe the icon you want to make…"
-              />
+              <div className="relative">
+                <Textarea
+                  id="prompt"
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                  required
+                  minLength={4}
+                  maxLength={1_500}
+                  className="min-h-24 resize-y rounded-xl border-[#c9c7cf] bg-white text-sm leading-5 focus-visible:border-[#7a5cff] focus-visible:ring-[#7a5cff]/20"
+                  placeholder=""
+                />
+                {!prompt ? (
+                  <span
+                    key={placeholderIndex}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-3 top-3.5 right-3 text-sm leading-5 text-muted-foreground animate-in fade-in-0 slide-in-from-bottom-1 duration-300 motion-reduce:animate-none"
+                  >
+                    {PROMPT_PLACEHOLDERS[placeholderIndex]}
+                  </span>
+                ) : null}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -805,7 +927,7 @@ export function GenerateForm({
                 {references.map((reference) => (
                   <div
                     key={reference.fileId}
-                    className="group relative aspect-square overflow-hidden rounded-md border border-[#d8d6d0] bg-white"
+                    className="group relative aspect-square overflow-hidden rounded-xl border border-[#d8d7dd] bg-white"
                   >
                     <img
                       src={reference.source}
@@ -827,7 +949,7 @@ export function GenerateForm({
                 {references.length < 4 ? (
                   <label
                     className={cn(
-                      'flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-[#bdbbb4] bg-[#faf9f6] text-center text-[10px] font-semibold hover:border-black',
+                      'flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-[#bdbbc5] bg-white text-center text-[10px] font-semibold hover:border-black',
                       (!session?.user ||
                         generationInProgress ||
                         pendingAction !== null) &&
@@ -866,25 +988,39 @@ export function GenerateForm({
 
             <fieldset className="space-y-2">
               <legend className="text-sm font-bold">Style</legend>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="flex flex-wrap gap-2">
                 {STYLE_OPTIONS.map((option) => {
                   const selected = option.id === styleId;
                   return (
-                    <button
+                    <SketchFrame
                       key={option.id}
-                      type="button"
-                      aria-pressed={selected}
-                      onClick={() => setStyleId(option.id)}
+                      color={selected ? '#7a5cff' : '#111111'}
                       className={cn(
-                        'flex min-h-16 flex-col items-center justify-center rounded-md px-1 pb-1 text-[10px] font-semibold transition-colors',
+                        'style-option-frame size-10 rounded-md transition-colors',
                         selected
-                          ? 'bg-transparent'
-                          : 'bg-white hover:bg-[#f7f6f2]'
+                          ? 'bg-[#f1ebff]'
+                          : 'bg-white hover:bg-[#f7f6f2] [&_.sketch-frame-border]:hidden'
                       )}
                     >
-                      <StyleArt accent={option.accent} selected={selected} />
-                      {option.label}
-                    </button>
+                      <button
+                        type="button"
+                        aria-label={option.label}
+                        aria-pressed={selected}
+                        title={option.label}
+                        onClick={() => setStyleId(option.id)}
+                        className="group relative flex size-full items-center justify-center"
+                      >
+                        <img
+                          src={option.image}
+                          alt=""
+                          aria-hidden="true"
+                          className="size-10 rounded-md bg-[#f7f6f2] object-cover"
+                        />
+                        <span className="pointer-events-none absolute bottom-[calc(100%+0.25rem)] left-1/2 z-30 w-max max-w-44 -translate-x-1/2 rounded-md bg-black px-2 py-1 text-center text-[10px] font-medium leading-3 text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                          {option.label}
+                        </span>
+                      </button>
+                    </SketchFrame>
                   );
                 })}
               </div>
@@ -943,7 +1079,7 @@ export function GenerateForm({
                   aria-pressed={backgroundMode === 'transparent'}
                   onClick={() => setBackgroundMode('transparent')}
                   className={cn(
-                    'flex min-h-9 items-center justify-center rounded-md border px-2 text-xs font-semibold',
+                    'flex min-h-9 items-center justify-center rounded-xl border px-2 text-xs font-semibold',
                     backgroundMode === 'transparent'
                       ? 'border-2 border-[#9b7bff]'
                       : 'border-[#d8d6d0] hover:border-black'
@@ -953,7 +1089,7 @@ export function GenerateForm({
                 </button>
                 <label
                   className={cn(
-                    'flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-md border px-2 text-xs font-semibold',
+                    'flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-xl border px-2 text-xs font-semibold',
                     backgroundMode === 'solid'
                       ? 'border-2 border-[#9b7bff]'
                       : 'border-[#d8d6d0] hover:border-black'
@@ -992,8 +1128,8 @@ export function GenerateForm({
                   disabled={pendingAction !== null || !prompt.trim()}
                   className="min-h-12 w-full text-sm font-bold"
                 >
-                  <IconWand className="size-5 text-[#c6ff5b]" />
-                  Generate <span className="text-[#c6ff5b]">⚡ −2</span>
+                  <IconWand className="size-5" />
+                  Generate <span className="text-[#6548d8]">⚡ −2</span>
                 </Button>
               )
             ) : (
@@ -1001,14 +1137,13 @@ export function GenerateForm({
                 render={<Link to="/auth/login" />}
                 className="min-h-12 w-full text-sm font-bold"
               >
-                Sign in to generate{' '}
-                <IconArrowDown className="-rotate-90 text-[#c6ff5b]" />
+                Sign in to generate <IconArrowDown className="-rotate-90" />
               </Button>
             )}
           </div>
-        </SketchFrame>
+        </section>
 
-        <SketchFrame color="#d8d6d0" className="min-w-0 bg-white p-3 sm:p-4">
+        <section className="min-w-0 rounded-2xl border border-[#dedde3] bg-white p-4 shadow-[0_10px_28px_rgba(17,17,17,0.05)] sm:p-5">
           <div className="flex min-h-full flex-col">
             <div className="flex flex-wrap items-center justify-between gap-2">
               {sectionTitle('2', 'PREVIEW')}
@@ -1059,7 +1194,7 @@ export function GenerateForm({
             ) : null}
 
             <div
-              className="relative mx-auto mt-3 aspect-square w-full max-w-[420px] overflow-hidden rounded-md border border-[#c9c7c0]"
+              className="relative mx-auto mt-4 aspect-square w-full max-w-[430px] overflow-hidden rounded-2xl border border-[#c9c7cf] bg-[#fbfbf8]"
               style={
                 backgroundMode === 'transparent'
                   ? CHECKERBOARD_STYLE
@@ -1070,7 +1205,7 @@ export function GenerateForm({
               {generationInProgress && !selectedAsset ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/75 text-center backdrop-blur-[1px]">
                   <IconLoader2 className="size-9 animate-spin text-[#9b7bff]" />
-                  <p className="mt-3 font-hand text-xl">
+                  <p className="mt-3 text-xl font-extrabold tracking-[-0.03em]">
                     Creating your concepts…
                   </p>
                   <p className="mt-1 px-6 text-sm text-muted-foreground">
@@ -1138,7 +1273,9 @@ export function GenerateForm({
             ) : null}
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-hand text-lg">Variations</h3>
+              <h3 className="text-lg font-extrabold tracking-[-0.02em]">
+                Your concepts
+              </h3>
               {selectedVersionLabel ? (
                 <span className="text-xs font-semibold text-muted-foreground">
                   {selectedVersionLabel}
@@ -1146,57 +1283,58 @@ export function GenerateForm({
               ) : null}
             </div>
 
-            <div className="mx-auto mt-2 grid w-full max-w-[640px] grid-cols-2 gap-2 sm:grid-cols-4">
-              {candidates.length
-                ? candidates.map((candidate) => (
-                    <button
-                      key={`${candidate.versionId}-${candidate.candidate}`}
-                      type="button"
-                      aria-pressed={selectedCandidate === candidate.candidate}
-                      disabled={exportBusy}
-                      onClick={() => setSelectedCandidate(candidate.candidate)}
-                      className={cn(
-                        'relative aspect-square overflow-hidden rounded-md border bg-white p-1 transition-colors hover:border-black',
-                        selectedCandidate === candidate.candidate
-                          ? 'border-2 border-[#9b7bff] shadow-[2px_2px_0_#9b7bff]'
-                          : 'border-[#d8d6d0]'
-                      )}
-                    >
-                      <img
-                        src={candidate.source}
-                        alt={`Variation ${candidate.candidate}`}
-                        className="h-full w-full object-cover"
+            <div className="mt-2 overflow-x-auto pb-1">
+              <div className="mx-auto grid min-w-[500px] max-w-[620px] grid-cols-4 gap-2">
+                {candidates.length
+                  ? candidates.map((candidate) => (
+                      <button
+                        key={`${candidate.versionId}-${candidate.candidate}`}
+                        type="button"
+                        aria-pressed={selectedCandidate === candidate.candidate}
+                        disabled={exportBusy}
+                        onClick={() =>
+                          setSelectedCandidate(candidate.candidate)
+                        }
+                        className={cn(
+                          'relative aspect-square overflow-hidden rounded-xl border bg-white p-1 transition-all hover:border-black',
+                          selectedCandidate === candidate.candidate
+                            ? 'border-2 border-[#7a5cff] shadow-[2px_2px_0_#c6ff5b]'
+                            : 'border-[#d8d7dd] shadow-[0_5px_14px_rgba(17,17,17,0.04)]'
+                        )}
+                      >
+                        <img
+                          src={candidate.source}
+                          alt={`Variation ${candidate.candidate}`}
+                          className="h-full w-full object-cover"
+                        />
+                        <span className="absolute bottom-1 left-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-bold">
+                          {candidate.candidate}
+                        </span>
+                      </button>
+                    ))
+                  : Array.from({ length: 4 }, (_, index) => (
+                      <div
+                        // Empty slots reserve the layout without implying a generated result.
+                        key={index}
+                        aria-hidden="true"
+                        className="sunburst-placeholder aspect-square rounded-xl border border-dashed border-[#c9c7cf]"
+                        style={
+                          backgroundMode === 'transparent'
+                            ? CHECKERBOARD_STYLE
+                            : { backgroundColor }
+                        }
                       />
-                      <span className="absolute bottom-1 left-1 rounded bg-white/90 px-1.5 text-[11px] font-bold">
-                        {candidate.candidate}
-                      </span>
-                    </button>
-                  ))
-                : Array.from({ length: 4 }, (_, index) => (
-                    <div
-                      // Empty slots reserve the layout without implying a generated result.
-                      key={index}
-                      aria-hidden="true"
-                      className="aspect-square rounded-md border border-dashed border-[#d8d6d0]"
-                      style={
-                        backgroundMode === 'transparent'
-                          ? CHECKERBOARD_STYLE
-                          : { backgroundColor }
-                      }
-                    />
-                  ))}
+                    ))}
+              </div>
             </div>
           </div>
-        </SketchFrame>
+        </section>
 
-        <SketchFrame
-          color="#d8d6d0"
-          className="bg-white p-4 sm:p-5 xl:row-span-1"
-        >
+        <section className="rounded-2xl border border-[#dedde3] bg-white p-4 shadow-[0_10px_28px_rgba(17,17,17,0.05)] sm:p-5 xl:row-span-1">
           <div className="space-y-6">
             {sectionTitle('3', 'EXPORT')}
 
-            <div className="flex min-h-14 items-center gap-3 rounded-md border border-[#d8d6d0] bg-[#faf9f6] p-2">
+            <div className="flex min-h-14 items-center gap-3 rounded-xl border border-[#d8d7dd] bg-[#fbfbf8] p-2.5">
               {selectedAsset ? (
                 <img
                   src={selectedAsset.source}
@@ -1220,7 +1358,7 @@ export function GenerateForm({
               </div>
             </div>
 
-            <div className="rounded-md border border-[#d8d6d0] bg-white px-3 py-2.5">
+            <div className="rounded-xl border border-[#d8d7dd] bg-white px-3 py-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold">HD master</p>
@@ -1265,7 +1403,7 @@ export function GenerateForm({
                     setExportMode(value);
                   }}
                   className={cn(
-                    'min-h-12 rounded-md border px-2 text-xs font-bold',
+                    'min-h-12 rounded-xl border px-2 text-xs font-bold',
                     exportMode === value
                       ? 'border-2 border-[#9b7bff] bg-[#9b7bff]/5'
                       : 'border-[#d8d6d0] hover:border-black'
@@ -1292,7 +1430,7 @@ export function GenerateForm({
                           setExportSize(size);
                         }}
                         className={cn(
-                          'min-h-9 rounded-md border text-xs font-semibold',
+                          'min-h-9 rounded-xl border text-xs font-semibold',
                           exportSize === size
                             ? 'border-2 border-[#9b7bff]'
                             : 'border-[#d8d6d0] hover:border-black'
@@ -1307,7 +1445,7 @@ export function GenerateForm({
                       </button>
                     ))}
                   </div>
-                  <label className="flex min-h-11 items-center gap-3 rounded-md border border-[#d8d6d0] bg-white px-3 text-sm font-semibold focus-within:border-[#9b7bff]">
+                  <label className="flex min-h-11 items-center gap-3 rounded-xl border border-[#d8d7dd] bg-white px-3 text-sm font-semibold focus-within:border-[#7a5cff]">
                     <span className="text-xs text-muted-foreground">
                       Custom
                     </span>
@@ -1356,7 +1494,7 @@ export function GenerateForm({
                           setFormat(option.value);
                         }}
                         className={cn(
-                          'flex min-h-12 items-center justify-center rounded-md border p-2 text-center text-xs font-semibold',
+                          'flex min-h-12 items-center justify-center rounded-xl border p-2 text-center text-xs font-semibold',
                           format === option.value
                             ? 'border-2 border-[#9b7bff] bg-[#9b7bff]/5'
                             : 'border-[#d8d6d0] hover:border-black'
@@ -1376,7 +1514,7 @@ export function GenerateForm({
                     <label
                       key={option.value}
                       className={cn(
-                        'flex min-h-12 cursor-pointer items-center gap-3 rounded-md border px-3 hover:border-black',
+                        'flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3 hover:border-black',
                         platforms.includes(option.value)
                           ? 'border-2 border-[#9b7bff] bg-[#9b7bff]/5'
                           : 'border-[#d8d6d0]'
@@ -1416,9 +1554,9 @@ export function GenerateForm({
             {exportQuery.data?.status === 'succeeded' && exportId ? (
               <a
                 href={`/api/exports/${exportId}`}
-                className="brush-button inline-flex min-h-12 w-full items-center justify-center gap-1.5 text-sm font-bold text-white"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-1.5 rounded-xl border-2 border-black bg-[#c6ff5b] px-4 text-sm font-extrabold text-black shadow-[2px_2px_0_#111] transition-all hover:-translate-y-0.5 hover:bg-[#b6f13e]"
               >
-                Download <IconDownload className="size-4 text-[#c6ff5b]" />
+                Download <IconDownload className="size-4" />
               </a>
             ) : (
               <Button
@@ -1435,7 +1573,7 @@ export function GenerateForm({
                 {pendingAction === 'export' || exportQuery.isFetching ? (
                   <IconLoader2 className="animate-spin" />
                 ) : (
-                  <IconDownload className="text-[#c6ff5b]" />
+                  <IconDownload />
                 )}
                 {pendingHdExport
                   ? 'Generating HD master…'
@@ -1449,8 +1587,60 @@ export function GenerateForm({
                         : 'Prepare package'}
               </Button>
             )}
+
+            <div className="border-t border-[#ecebf0] pt-5">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-extrabold">Project history</h3>
+                <Link
+                  to="/dashboard/projects"
+                  className="text-[11px] font-bold text-[#6548d8] hover:underline"
+                >
+                  See all
+                </Link>
+              </div>
+              <div className="mt-3 space-y-2">
+                {(projectHistoryQuery.data ?? []).slice(0, 5).map((project) => (
+                  <Link
+                    key={project.id}
+                    to="/generate"
+                    search={{ project: project.id }}
+                    className={cn(
+                      'flex items-center gap-3 rounded-xl border border-[#dedde3] bg-[#fbfbf8] p-2.5 transition-all hover:border-black hover:bg-white',
+                      project.id === projectId &&
+                        'border-[#7a5cff] bg-[#f1ebff]'
+                    )}
+                  >
+                    <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#dedde3] bg-white">
+                      {project.thumbnailKey ? (
+                        <img
+                          src={`/api/storage/file?key=${encodeURIComponent(project.thumbnailKey)}`}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <IconPhoto className="size-4 text-[#8a8892]" />
+                      )}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-xs font-extrabold">
+                        {project.name}
+                      </span>
+                      <span className="mt-0.5 block text-[10px] text-[#777]">
+                        {project.latestJobStatus ?? 'Project'}
+                      </span>
+                    </span>
+                  </Link>
+                ))}
+                {!projectHistoryQuery.isPending &&
+                !(projectHistoryQuery.data ?? []).length ? (
+                  <div className="sunburst-placeholder rounded-xl border border-dashed border-[#c9c7cf] px-3 py-4 text-center text-[11px] text-[#777]">
+                    Your generated projects will appear here.
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </div>
-        </SketchFrame>
+        </section>
       </div>
     </form>
   );

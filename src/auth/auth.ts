@@ -12,6 +12,19 @@ import { websiteConfig } from '@/config/website';
 import { emailHarmony } from 'better-auth-harmony';
 import { admin, apiKey, captcha } from 'better-auth/plugins';
 
+const isLocalE2EMode =
+  import.meta.env.DEV === true && import.meta.env.MODE === 'e2e';
+
+if (
+  import.meta.env.PROD &&
+  (!process.env.BETTER_AUTH_SECRET ||
+    process.env.BETTER_AUTH_SECRET === 'better-auth-secret')
+) {
+  throw new Error(
+    'BETTER_AUTH_SECRET must be configured securely in production'
+  );
+}
+
 /**
  * Better Auth Configuration
  * https://www.better-auth.com/docs/reference/options
@@ -56,6 +69,7 @@ export const auth = betterAuth({
     autoSignInAfterVerification: true,
     // https://www.better-auth.com/docs/authentication/email-password#require-email-verification
     sendVerificationEmail: async ({ user, url }) => {
+      if (isLocalE2EMode) return;
       await sendEmail({
         to: user.email,
         template: 'verifyEmail',
@@ -76,7 +90,9 @@ export const auth = betterAuth({
           },
         }
       : {}),
-    ...(serverEnv.GITHUB_CLIENT_ID && serverEnv.GITHUB_CLIENT_SECRET
+    ...(websiteConfig.auth?.enableGitHubLogin &&
+    serverEnv.GITHUB_CLIENT_ID &&
+    serverEnv.GITHUB_CLIENT_SECRET
       ? {
           github: {
             clientId: serverEnv.GITHUB_CLIENT_ID,
@@ -88,10 +104,13 @@ export const auth = betterAuth({
   account: {
     // https://www.better-auth.com/docs/concepts/users-accounts#account-linking
     accountLinking: {
-      enabled: websiteConfig.auth?.enableGoogleLogin,
-      trustedProviders: websiteConfig.auth?.enableGoogleLogin
-        ? ['google', 'github']
-        : [],
+      enabled:
+        websiteConfig.auth?.enableGoogleLogin ||
+        websiteConfig.auth?.enableGitHubLogin,
+      trustedProviders: [
+        ...(websiteConfig.auth?.enableGoogleLogin ? ['google'] : []),
+        ...(websiteConfig.auth?.enableGitHubLogin ? ['github'] : []),
+      ],
     },
   },
   user: {
@@ -121,7 +140,7 @@ export const auth = betterAuth({
   plugins: [
     // https://www.better-auth.com/docs/integrations/tanstack
     tanstackStartCookies(),
-    ...(serverEnv.TURNSTILE_SECRET_KEY
+    ...(!isLocalE2EMode && serverEnv.TURNSTILE_SECRET_KEY
       ? [
           captcha({
             provider: 'cloudflare-turnstile',

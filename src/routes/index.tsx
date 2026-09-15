@@ -1,4 +1,4 @@
-import { HomePage } from '@/components/blocks/homepage';
+import { SunburstHomePage } from '@/components/blocks/sunburst-homepage';
 import { websiteConfig } from '@/config/website';
 import { seo } from '@/lib/seo';
 import { getCanonicalUrl } from '@/lib/urls';
@@ -51,5 +51,5 @@ export const Route = createFileRoute('/')({
       ],
     };
   },
-  component: HomePage,
+  component: SunburstHomePage,
 });

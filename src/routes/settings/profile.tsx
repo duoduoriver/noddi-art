@@ -27,8 +27,8 @@ function ProfilePage() {
       <div className="flex flex-col gap-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           <UpdateNameCard />
-          <div className="rounded-lg border p-6">
-            <h2 className="font-semibold">
+          <div className="sunburst-card p-6">
+            <h2 className="text-lg font-extrabold tracking-[-0.02em]">
               {m.settings_profile_email_title()}
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -46,7 +46,7 @@ function ProfilePage() {
         </div>
         {websiteConfig.auth?.enableCredentialLogin ? (
           <section>
-            <h2 className="mb-3 font-hand text-2xl">
+            <h2 className="mb-3 text-2xl font-extrabold tracking-[-0.03em]">
               {m.settings_profile_security_title()}
             </h2>
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
@@ -56,7 +56,7 @@ function ProfilePage() {
         ) : null}
         {websiteConfig.auth?.enableDeleteAccount ? (
           <section>
-            <h2 className="mb-3 font-hand text-2xl">
+            <h2 className="mb-3 text-2xl font-extrabold tracking-[-0.03em]">
               {m.settings_security_delete_account_title()}
             </h2>
             <p className="mb-3 text-sm text-muted-foreground">

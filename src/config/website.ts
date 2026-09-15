@@ -30,7 +30,7 @@ export const websiteConfig: WebsiteConfig = {
       return m.site_description();
     },
     images: {
-      ogImage: '/og.png',
+      ogImage: '/og.jpg',
       logoLight: '/logo.png',
       logoDark: '/logo-dark.png',
     },
@@ -39,7 +39,8 @@ export const websiteConfig: WebsiteConfig = {
   auth: {
     enable: true,
     enableGoogleLogin: true,
-    enableCredentialLogin: true,
+    enableGitHubLogin: true,
+    enableCredentialLogin: false,
     enableDeleteAccount: true,
   },
   blog: { enable: false, paginationSize: 6 },
@@ -70,9 +71,13 @@ export const websiteConfig: WebsiteConfig = {
         free: {
           id: 'free',
           name: 'Free',
-          description: 'Try the Sunburst AI concept sheet.',
-          features: ['2 plan credits'],
-          limits: ['Concept sheets only'],
+          description: 'Try the full concept workflow and lightweight exports.',
+          features: [
+            '2 plan credits',
+            'PNG / WebP up to 512px',
+            'Android / Web packages',
+          ],
+          limits: ['HD master and iOS / macOS export require paid access'],
           prices: [],
           isFree: true,
           isLifetime: false,
@@ -81,7 +86,11 @@ export const websiteConfig: WebsiteConfig = {
           id: 'pro',
           name: 'Pro',
           description: 'Monthly credits for regular icon work.',
-          features: ['100 monthly credits'],
+          features: [
+            '100 monthly credits',
+            '1024px HD master',
+            'iOS / macOS export',
+          ],
           limits: [],
           prices: [
             {
@@ -100,7 +109,11 @@ export const websiteConfig: WebsiteConfig = {
           id: 'studio',
           name: 'Studio',
           description: 'Monthly credits for teams and launches.',
-          features: ['400 monthly credits'],
+          features: [
+            '400 monthly credits',
+            'Everything in Pro',
+            'More room for launch-heavy iteration',
+          ],
           limits: [],
           prices: [
             {

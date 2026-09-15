@@ -11,6 +11,7 @@ import { eq, or } from 'drizzle-orm';
 import {
   grantPurchasedCredits,
   grantSubscriptionPeriod,
+  revokeCreditsForRefund,
 } from '@/credits/service';
 import { isPaidPlan, type NoddiPackCode } from '@/credits/catalog';
 import { getDb } from '@/db';
@@ -429,10 +430,31 @@ export class WaffoProvider implements PaymentProvider {
       console.warn('Waffo refund event is missing paymentId and orderId');
       return;
     }
-    await getDb()
+    const db = getDb();
+    const [refundedPayment] = await db
+      .select({ id: payment.id, userId: payment.userId, type: payment.type })
+      .from(payment)
+      .where(or(...filters))
+      .limit(1);
+    await db
       .update(payment)
       .set({ paid: false, updatedAt: new Date() })
       .where(or(...filters));
+    if (refundedPayment?.userId) {
+      await revokeCreditsForRefund({
+        userId: refundedPayment.userId,
+        paymentId: refundedPayment.id,
+        refundId: event.eventId,
+        kind:
+          refundedPayment.type === PaymentTypes.SUBSCRIPTION
+            ? 'subscription'
+            : 'one_time',
+      });
+    } else {
+      console.warn(
+        'Waffo refund could not resolve a local user credit account'
+      );
+    }
   }
 
   /** Application locale → Waffo hosted checkout language. */

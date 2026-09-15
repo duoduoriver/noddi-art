@@ -33,11 +33,16 @@ interface LoginFormProps {
   className?: string;
   callbackUrl?: string;
   onSuccess?: () => void;
+  compact?: boolean;
 }
+const isLocalE2EMode =
+  import.meta.env.DEV === true && import.meta.env.MODE === 'e2e';
+
 export function LoginForm({
   className,
   callbackUrl: propCallbackUrl,
   onSuccess,
+  compact = false,
 }: LoginFormProps) {
   const paramCallbackUrl =
     typeof window !== 'undefined'
@@ -51,7 +56,9 @@ export function LoginForm({
   const [success, setSuccess] = useState<string | undefined>(undefined);
   const [isPending, setIsPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState<string>();
+  const [turnstileToken, setTurnstileToken] = useState<string | undefined>(
+    isLocalE2EMode ? 'e2e-bypass' : undefined
+  );
   const turnstileRef = useRef<TurnstileInstance>(null);
   const turnstileSiteKey = publicEnv.VITE_TURNSTILE_SITE_KEY;
   const credentialLoginEnabled =
@@ -64,41 +71,95 @@ export function LoginForm({
     resolver: zodResolver(LoginSchema),
     defaultValues: { email: '', password: '' },
   });
+  const pendingLoginRef = useRef<z.infer<typeof LoginSchema> | null>(null);
   const urlError =
     typeof window !== 'undefined'
       ? new URLSearchParams(window.location.search).get('error')
       : null;
+
+  const resetTurnstileSoon = () => {
+    if (isLocalE2EMode) return;
+    window.setTimeout(() => turnstileRef.current?.reset(), 0);
+  };
+  const signInWithToken = async (
+    values: z.infer<typeof LoginSchema>,
+    token: string
+  ) => {
+    try {
+      await authClient.signIn.email(
+        {
+          email: values.email,
+          password: values.password,
+          callbackURL: callbackUrl,
+        },
+        {
+          headers: { 'x-captcha-response': token },
+          onRequest: () => {
+            setIsPending(true);
+            setError('');
+            setSuccess('');
+          },
+          onSuccess: () => {
+            pendingLoginRef.current = null;
+            setIsPending(false);
+            emitAuthSessionChanged({ authenticated: true });
+            onSuccess?.();
+          },
+          onError: (ctx) => {
+            pendingLoginRef.current = null;
+            setIsPending(false);
+            setTurnstileToken(undefined);
+            setError(getAuthErrorMessage(ctx.error));
+            resetTurnstileSoon();
+          },
+        }
+      );
+    } catch (caught) {
+      pendingLoginRef.current = null;
+      setIsPending(false);
+      setTurnstileToken(undefined);
+      setError(
+        getAuthErrorMessage({
+          message:
+            caught instanceof Error
+              ? caught.message
+              : 'Sign in failed. Please try again.',
+        })
+      );
+      resetTurnstileSoon();
+    }
+  };
+
   const onSubmit = async (values: z.infer<typeof LoginSchema>) => {
-    if (!turnstileToken) {
-      setError('Complete bot verification before signing in.');
+    const token = turnstileToken ?? turnstileRef.current?.getResponse();
+    if (token) {
+      await signInWithToken(values, token);
       return;
     }
 
-    await authClient.signIn.email(
-      {
-        email: values.email,
-        password: values.password,
-        callbackURL: callbackUrl,
-      },
-      {
-        headers: { 'x-captcha-response': turnstileToken },
-        onRequest: () => {
-          setIsPending(true);
-          setError('');
-          setSuccess('');
-        },
-        onResponse: () => setIsPending(false),
-        onSuccess: () => {
-          emitAuthSessionChanged({ authenticated: true });
-          onSuccess?.();
-        },
-        onError: (ctx) => {
-          setTurnstileToken(undefined);
-          turnstileRef.current?.reset();
-          setError(getAuthErrorMessage(ctx.error));
-        },
-      }
-    );
+    if (!turnstileSiteKey) {
+      setError('Bot verification is not configured.');
+      return;
+    }
+
+    const turnstile = turnstileRef.current;
+    if (!turnstile) {
+      setError('Security verification is still loading. Please try again.');
+      return;
+    }
+
+    pendingLoginRef.current = values;
+    setError('');
+    setSuccess('');
+    setIsPending(true);
+
+    try {
+      turnstile.execute();
+    } catch {
+      pendingLoginRef.current = null;
+      setIsPending(false);
+      setError('Could not start security verification. Please try again.');
+    }
   };
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
@@ -106,26 +167,38 @@ export function LoginForm({
   return (
     <AuthCard
       headerLabel={m.auth_login_welcome_back()}
+      description={m.auth_login_description()}
       bottomButtonLabel={m.auth_login_sign_up_hint()}
       bottomButtonHref={Routes.Register}
       className={cn('', className)}
+      compact={compact}
     >
       {credentialLoginEnabled && (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className={cn('space-y-6', compact && 'space-y-4')}
+          >
+            <div className={cn('space-y-4', compact && 'space-y-3.5')}>
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{m.auth_login_email()}</FormLabel>
+                  <FormItem className={cn(compact && 'gap-1.5')}>
+                    <FormLabel
+                      className={cn(compact && 'text-sm font-semibold')}
+                    >
+                      {m.auth_login_email()}
+                    </FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         disabled={isPending}
                         placeholder={m.auth_login_placeholder_email()}
                         type="email"
+                        className={cn(
+                          compact && 'h-11 rounded-xl px-3.5 text-sm'
+                        )}
                       />
                     </FormControl>
                     <FormMessage />
@@ -136,12 +209,19 @@ export function LoginForm({
                 control={form.control}
                 name="password"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className={cn(compact && 'gap-1.5')}>
                     <div className="flex justify-between items-center">
-                      <FormLabel>{m.auth_login_password()}</FormLabel>
+                      <FormLabel
+                        className={cn(compact && 'text-sm font-semibold')}
+                      >
+                        {m.auth_login_password()}
+                      </FormLabel>
                       <Link
                         to={Routes.ForgotPassword}
-                        className="text-xs font-normal text-muted-foreground hover:underline hover:underline-offset-4 hover:text-primary"
+                        className={cn(
+                          'font-normal text-muted-foreground hover:text-primary hover:underline hover:underline-offset-4',
+                          compact ? 'text-sm' : 'text-xs'
+                        )}
                       >
                         {m.auth_login_forgot_password()}
                       </Link>
@@ -153,14 +233,20 @@ export function LoginForm({
                           disabled={isPending}
                           placeholder={m.auth_login_placeholder_password()}
                           type={showPassword ? 'text' : 'password'}
-                          className="pr-10"
+                          className={cn(
+                            'pr-10',
+                            compact && 'h-11 rounded-xl px-3.5 pr-11 text-sm'
+                          )}
                         />
                       </FormControl>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3 border-0 bg-transparent hover:bg-transparent hover:opacity-70 dark:hover:bg-transparent"
+                        className={cn(
+                          'absolute right-0 top-0 h-full border-0 bg-transparent px-3 hover:bg-transparent hover:opacity-70 dark:hover:bg-transparent',
+                          compact && 'right-1 px-2.5'
+                        )}
                         onClick={togglePasswordVisibility}
                         disabled={isPending}
                       >
@@ -181,18 +267,50 @@ export function LoginForm({
                 )}
               />
             </div>
-            {turnstileSiteKey ? (
-              <Turnstile
-                ref={turnstileRef}
-                siteKey={turnstileSiteKey}
-                onSuccess={setTurnstileToken}
-                onExpire={() => setTurnstileToken(undefined)}
-                onError={() => {
-                  setTurnstileToken(undefined);
-                  setError('Bot verification failed. Please try again.');
-                }}
-                options={{ action: 'login', size: 'flexible' }}
-              />
+            {isLocalE2EMode ? null : turnstileSiteKey ? (
+              <div className={cn(compact && 'overflow-hidden rounded-xl')}>
+                <Turnstile
+                  ref={turnstileRef}
+                  siteKey={turnstileSiteKey}
+                  onSuccess={(token) => {
+                    setTurnstileToken(token);
+                    const pendingLogin = pendingLoginRef.current;
+                    if (pendingLogin) {
+                      void signInWithToken(pendingLogin, token);
+                    }
+                  }}
+                  onExpire={() => setTurnstileToken(undefined)}
+                  onError={() => {
+                    pendingLoginRef.current = null;
+                    setIsPending(false);
+                    setTurnstileToken(undefined);
+                    setError('Bot verification failed. Please try again.');
+                  }}
+                  onTimeout={() => {
+                    pendingLoginRef.current = null;
+                    setIsPending(false);
+                    setTurnstileToken(undefined);
+                    turnstileRef.current?.reset();
+                    setError(
+                      'Security verification timed out. Please try again.'
+                    );
+                  }}
+                  onUnsupported={() => {
+                    pendingLoginRef.current = null;
+                    setIsPending(false);
+                    setTurnstileToken(undefined);
+                    setError(
+                      'This browser cannot complete security verification.'
+                    );
+                  }}
+                  options={{
+                    action: 'login',
+                    size: 'flexible',
+                    appearance: 'interaction-only',
+                    execution: 'execute',
+                  }}
+                />
+              </div>
             ) : (
               <p className="text-sm text-red-600">
                 Bot verification is not configured.
@@ -201,10 +319,13 @@ export function LoginForm({
             <FormError message={error || urlError || undefined} />
             <FormSuccess message={success} />
             <Button
-              disabled={isPending || !turnstileToken}
-              size="lg"
+              disabled={isPending}
+              size={compact ? 'default' : 'lg'}
               type="submit"
-              className="w-full flex items-center justify-center gap-2"
+              className={cn(
+                'flex w-full items-center justify-center gap-2',
+                compact && 'h-11 rounded-xl'
+              )}
             >
               {isPending && <IconLoader2 className="size-4 animate-spin" />}
               <span>{m.auth_login_sign_in()}</span>
@@ -212,10 +333,11 @@ export function LoginForm({
           </form>
         </Form>
       )}
-      <div className="mt-4">
+      <div className={compact ? 'mt-3' : 'mt-4'}>
         <SocialLoginButton
           callbackUrl={callbackUrl}
           showDivider={credentialLoginEnabled}
+          compact={compact}
         />
       </div>
     </AuthCard>

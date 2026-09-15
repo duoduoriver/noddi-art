@@ -40,15 +40,15 @@ export function DashboardSidebar({ user, ...props }: DashboardSidebarProps) {
   };
 
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
+    <Sidebar collapsible="icon" className="border-r-0 bg-[#fbfbf8]" {...props}>
+      <SidebarHeader className="border-b border-[#ecebf0] pb-3">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               render={
                 <Link to={Routes.Root} onClick={closeMobileSidebar}>
                   <Logo className="size-5" />
-                  <span className="truncate font-semibold text-base">
+                  <span className="truncate text-base font-extrabold tracking-[-0.02em]">
                     {websiteConfig.metadata?.name}
                   </span>
                 </Link>
@@ -69,7 +69,7 @@ export function DashboardSidebar({ user, ...props }: DashboardSidebarProps) {
                 </Link>
               }
               tooltip={m.noddi_sidebar_create()}
-              className="rounded-full bg-black text-white hover:bg-black/90 hover:text-white"
+              className="rounded-xl border-2 border-black bg-[#c6ff5b] font-bold text-black shadow-[2px_2px_0_#111] hover:bg-[#b6f13e] hover:text-black"
             />
           </SidebarMenuItem>
         </SidebarMenu>

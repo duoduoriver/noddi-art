@@ -23,6 +23,7 @@ import {
   moderatePrompt,
 } from '@/image/openai-compat';
 import { getOperationalSettings } from '@/generation/settings';
+import { isFreeExportAllowed } from '@/export/access';
 import {
   GenerationError,
   HD_MASTER_CREDIT_COST,
@@ -922,6 +923,20 @@ export const queueExport = createServerFn({ method: 'POST' })
   )
   .middleware([authApiMiddleware])
   .handler(async ({ data, context }) => {
+    if (
+      !(await hasPaidAccess(context.userId)) &&
+      !isFreeExportAllowed(
+        data.kind === 'image'
+          ? {
+              kind: 'image',
+              rasterFormat: data.rasterFormat,
+              size: data.size,
+            }
+          : { kind: 'packages', platforms: data.platforms }
+      )
+    ) {
+      throw new GenerationError('EXPORT_FROZEN');
+    }
     const db = getDb();
     const [source] = await db
       .select({

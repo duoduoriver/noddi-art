@@ -42,25 +42,19 @@ export function DeveloperExportPage({
   localTool?: ReactNode;
 }) {
   return (
-    <main className="bg-white text-[#111111]">
-      <Container className="px-5 py-16 lg:px-10 lg:py-24">
+    <main className="sunburst-shell">
+      <Container className="px-5 py-14 lg:px-10 lg:py-20">
         <div className="mx-auto max-w-6xl">
           <header className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.22em] text-[#6548d8]">
-                {eyebrow}
-              </p>
-              <h1 className="mt-4 max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-                {title}
-              </h1>
-              <p className="mt-6 max-w-3xl text-lg leading-8 text-muted-foreground">
-                {description}
-              </p>
+              <p className="sunburst-eyebrow">{eyebrow}</p>
+              <h1 className="sunburst-heading mt-5 max-w-4xl">{title}</h1>
+              <p className="sunburst-copy mt-5 max-w-3xl">{description}</p>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <a
                   href={ctaHref}
                   className={buttonVariants({
-                    className: 'brush-button min-h-12 px-5 font-bold',
+                    className: 'min-h-12 px-5 font-bold',
                   })}
                 >
                   {ctaLabel}
@@ -72,7 +66,7 @@ export function DeveloperExportPage({
               </div>
             </div>
 
-            <aside className="border-2 border-black bg-[#f7f7f3] p-6 shadow-[5px_5px_0_#c6ff5b]">
+            <aside className="sunburst-soft-band rounded-2xl border-2 border-black p-6 shadow-[4px_4px_0_#c6ff5b]">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
                 What the export includes
               </p>
@@ -103,7 +97,7 @@ export function DeveloperExportPage({
                 rather than a hypothetical feature list.
               </p>
             </div>
-            <pre className="overflow-x-auto rounded-xl border-2 border-black bg-[#111111] p-5 text-sm leading-7 text-white shadow-[5px_5px_0_#9b7bff]">
+            <pre className="overflow-x-auto rounded-2xl border-2 border-black bg-[#111111] p-5 text-sm leading-7 text-white shadow-[4px_4px_0_#9b7bff]">
               <code>{fileTree.join('\n')}</code>
             </pre>
           </section>
@@ -117,7 +111,7 @@ export function DeveloperExportPage({
             </h2>
             <div className="mt-8 grid gap-5 md:grid-cols-3">
               {workflow.map((step, index) => (
-                <article key={step.title} className="border-2 border-black p-6">
+                <article key={step.title} className="sunburst-card p-6">
                   <span className="text-sm font-bold text-[#6548d8]">
                     0{index + 1}
                   </span>
@@ -131,7 +125,7 @@ export function DeveloperExportPage({
           </section>
 
           <section className="mt-20 grid gap-8 lg:grid-cols-2">
-            <div className="rounded-xl border border-[#d8d6d0] bg-[#f7f7f3] p-6">
+            <div className="rounded-2xl border border-[#d8d7dd] bg-[#fbfbf8] p-6">
               <h2 className="text-2xl font-bold">Before you ship</h2>
               <ul className="mt-5 space-y-3 text-sm leading-6 text-muted-foreground">
                 {notes.map((note) => (
@@ -146,7 +140,7 @@ export function DeveloperExportPage({
                   <a
                     key={tool.href}
                     href={tool.href}
-                    className="block rounded-xl border-2 border-black p-5 transition-transform hover:-translate-y-0.5"
+                    className="sunburst-card block p-5 transition-transform hover:-translate-y-0.5 hover:border-black"
                   >
                     <span className="font-bold underline decoration-2 underline-offset-4">
                       {tool.label}

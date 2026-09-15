@@ -51,16 +51,14 @@ export const Route = createFileRoute('/(pages)/guides')({
 
 function GuidesPage() {
   return (
-    <main className="bg-white text-[#111111]">
-      <Container className="px-5 py-16 lg:px-10 lg:py-24">
+    <main className="sunburst-shell">
+      <Container className="px-5 py-14 lg:px-10 lg:py-20">
         <div className="mx-auto max-w-6xl">
-          <p className="text-sm font-bold uppercase tracking-[0.22em] text-[#6548d8]">
-            DEVELOPER GUIDES
-          </p>
-          <h1 className="mt-4 max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+          <p className="sunburst-eyebrow">DEVELOPER GUIDES</p>
+          <h1 className="sunburst-heading mt-5 max-w-4xl">
             App Icon Guides for Shipping, Not Just Designing
           </h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-muted-foreground">
+          <p className="sunburst-copy mt-5 max-w-3xl">
             Use these references when you need the correct icon master, platform
             package, safe zone, or web manifest setup. Every guide links back to
             a working Sunburst AI utility where the workflow can be automated.
@@ -70,13 +68,13 @@ function GuidesPage() {
               <a
                 key={guide.href}
                 href={guide.href}
-                className="border-2 border-black bg-white p-6 shadow-[4px_4px_0_#c6ff5b] transition-transform hover:-translate-y-1"
+                className="sunburst-card group p-6 transition-transform hover:-translate-y-1 hover:border-black"
               >
                 <h2 className="text-xl font-bold">{guide.title}</h2>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">
                   {guide.description}
                 </p>
-                <span className="mt-5 inline-block text-sm font-bold underline decoration-2 underline-offset-4">
+                <span className="mt-5 inline-block text-sm font-extrabold text-[#6548d8] group-hover:underline group-hover:decoration-2 group-hover:underline-offset-4">
                   Read guide →
                 </span>
               </a>

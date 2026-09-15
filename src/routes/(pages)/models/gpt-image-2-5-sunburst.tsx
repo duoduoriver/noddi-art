@@ -5,7 +5,7 @@ import { createFileRoute } from '@tanstack/react-router';
 const path = '/models/gpt-image-2-5-sunburst';
 const title = 'GPT-Image-2.5 Sunburst for App Icon Workflows | Sunburst AI';
 const description =
-  'Explore GPT-Image-2.5 Sunburst from an app icon workflow perspective: concept generation, focused refinement, and developer-ready export for iOS, Android, macOS, and Web.';
+  'Explore GPT-Image-2.5 Sunburst from an app icon workflow perspective: four-concept generation, selection, optional HD master preparation, and developer-ready export for iOS, Android, macOS, and Web.';
 
 export const Route = createFileRoute('/(pages)/models/gpt-image-2-5-sunburst')({
   head: () =>
@@ -36,12 +36,12 @@ function GptImageSunburstPage() {
         },
         {
           title: 'From model output to developer assets',
-          body: 'Use generation for visual exploration, then refine a selected direction before creating platform packages. The goal is not just a PNG: it is a dependable icon master that can become an iOS AppIcon set, Android adaptive and themed assets, a macOS icon, or web favicon and PWA files.',
+          body: 'Use generation for visual exploration, then pick the strongest direction and prepare an HD master when the target export needs one. The goal is not just a PNG: it is a dependable icon master that can become an iOS AppIcon set, Android adaptive and themed assets, a macOS icon, or web favicon and PWA files.',
         },
         {
           title:
             'Use model names as a starting point, not the product boundary',
-          body: 'Image models change quickly. The durable workflow is the layer around them: prompting for an app-specific symbol, reviewing variations, correcting weak details, and exporting production-ready assets. Sunburst AI is designed around that end-to-end developer task.',
+          body: 'Image models change quickly. The durable workflow is the layer around them: prompting for an app-specific symbol, reviewing four variations, selecting a strong candidate, and exporting production-ready assets. Sunburst AI is designed around that end-to-end developer task.',
         },
       ]}
       relatedLinks={[

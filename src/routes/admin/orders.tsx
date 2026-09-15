@@ -18,11 +18,16 @@ function OrdersPage() {
       <DashboardHeader
         breadcrumbs={[{ label: m.noddi_admin_orders(), isCurrentPage: true }]}
       />
-      <main className="space-y-6 p-4 lg:p-8">
-        <h1 className="font-hand text-4xl">{m.noddi_admin_orders()}</h1>
-        <div className="overflow-x-auto border-2 border-black">
+      <main className="space-y-6 p-5 lg:p-8">
+        <div>
+          <span className="sunburst-eyebrow">Admin</span>
+          <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.04em]">
+            {m.noddi_admin_orders()}
+          </h1>
+        </div>
+        <div className="overflow-x-auto rounded-2xl border border-[#dedde3] bg-white shadow-[0_10px_28px_rgba(17,17,17,0.05)]">
           <table className="w-full text-left text-sm">
-            <thead>
+            <thead className="bg-[#f6f5f2]">
               <tr>
                 <th className="p-3">Order</th>
                 <th className="p-3">Price</th>
@@ -32,7 +37,7 @@ function OrdersPage() {
             </thead>
             <tbody>
               {data?.payments.map((entry) => (
-                <tr key={entry.id} className="border-t">
+                <tr key={entry.id} className="border-t border-[#ecebf0]">
                   <td className="p-3 font-mono text-xs">{entry.id}</td>
                   <td className="p-3">{entry.priceId}</td>
                   <td className="p-3">{entry.status}</td>
