@@ -433,9 +433,9 @@ describe('Waffo provider boundary', () => {
 
     expect(mocks.set).toHaveBeenCalledWith(
       expect.objectContaining({
-        cancelAtPeriodEnd: true,
-        paid: true,
-        status: 'active',
+        cancelAtPeriodEnd: false,
+        paid: false,
+        status: 'canceled',
         updatedAt: expect.any(Date),
       })
     );
@@ -863,7 +863,7 @@ describe('Waffo provider boundary', () => {
     expect(mocks.endSubscriptionCredits).toHaveBeenCalledWith('user_123');
   });
 
-  test('keeps Studio when Waffo reports canceling before period end', async () => {
+  test('drops Studio when Waffo reports canceling', async () => {
     mocks.limit.mockResolvedValueOnce([
       {
         id: 'ORD_studio',
@@ -885,12 +885,12 @@ describe('Waffo provider boundary', () => {
 
     expect(mocks.set).toHaveBeenCalledWith(
       expect.objectContaining({
-        status: 'active',
-        paid: true,
-        cancelAtPeriodEnd: true,
+        status: 'canceled',
+        paid: false,
+        cancelAtPeriodEnd: false,
       })
     );
-    expect(mocks.endSubscriptionCredits).not.toHaveBeenCalled();
+    expect(mocks.endSubscriptionCredits).toHaveBeenCalledWith('user_123');
   });
 
   test('does not drop the local plan when the Waffo order query fails', async () => {

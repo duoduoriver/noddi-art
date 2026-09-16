@@ -61,6 +61,7 @@ type WaffoGroupRow = {
 };
 
 type WaffoRemoteOrder = {
+  id?: string;
   status?: string;
   currentPeriodEnd?: string | null;
 };
@@ -83,6 +84,7 @@ export class WaffoProvider implements PaymentProvider {
 
   private client: WaffoPancake;
   private reconcileAt = new Map<string, number>();
+  private syncInFlight = new Map<string, Promise<void>>();
 
   constructor() {
     const merchantId = process.env.WAFFO_MERCHANT_ID;
@@ -188,14 +190,22 @@ export class WaffoProvider implements PaymentProvider {
   }
 
   async syncSubscriptionsFromProvider(userId: string): Promise<void> {
+    const inflight = this.syncInFlight.get(userId);
+    if (inflight) return inflight;
     const last = this.reconcileAt.get(userId) ?? 0;
     if (Date.now() - last < RECONCILE_INTERVAL_MS) return;
-    this.reconcileAt.set(userId, Date.now());
+    const run = this.performSubscriptionSync(userId).finally(() => {
+      this.syncInFlight.delete(userId);
+    });
+    this.syncInFlight.set(userId, run);
+    await run;
+  }
+
+  private async performSubscriptionSync(userId: string): Promise<void> {
     const rows = await getDb()
       .select({
         id: payment.id,
         status: payment.status,
-        periodEnd: payment.periodEnd,
       })
       .from(payment)
       .where(
@@ -216,7 +226,7 @@ export class WaffoProvider implements PaymentProvider {
         continue;
       }
       sawRemote = true;
-      const next = this.mapRemoteSubscription(remote, row.periodEnd);
+      const next = this.mapRemoteSubscription(remote);
       if (next.status === 'active' || next.status === 'trialing') {
         hasLive = true;
       }
@@ -230,7 +240,9 @@ export class WaffoProvider implements PaymentProvider {
         })
         .where(eq(payment.id, row.id));
     }
-    if (sawRemote && !hasLive) {
+    if (!sawRemote) return;
+    this.reconcileAt.set(userId, Date.now());
+    if (!hasLive) {
       await endSubscriptionCredits(userId);
     }
   }
@@ -280,10 +292,17 @@ export class WaffoProvider implements PaymentProvider {
           }
           break;
         case WebhookEventType.SubscriptionCanceling:
+          // Merchant/customer cancel is canceling until the PSP period ends.
+          // The site should stop advertising an Active paid plan immediately.
           await this.updateSubscription(event, {
-            status: 'active',
-            cancelAtPeriodEnd: true,
+            status: 'canceled',
+            cancelAtPeriodEnd: false,
+            paid: false,
           });
+          await this.endCreditsIfUnsubscribed(
+            this.getUserId(event.data),
+            event.data.orderId
+          );
           break;
         case WebhookEventType.SubscriptionUncanceled:
           await this.updateSubscription(event, {
@@ -493,7 +512,10 @@ export class WaffoProvider implements PaymentProvider {
   ): Promise<void> {
     const { data } = event;
     const values: Partial<typeof payment.$inferInsert> = {
-      status: this.mapSubscriptionStatus(data.orderStatus, options.status),
+      status: this.mapSubscriptionStatus(
+        data.orderStatus,
+        options.status ?? 'active'
+      ),
       paid: options.paid ?? true,
       // Only clear a scheduled cancellation when the event actually reports
       // one; otherwise a renewal or plan change would silently un-cancel.
@@ -689,13 +711,11 @@ export class WaffoProvider implements PaymentProvider {
   private async fetchSubscriptionOrder(
     orderId: string
   ): Promise<WaffoRemoteOrder | null | 'unknown'> {
+    const listed = await this.findListedSubscriptionOrder(orderId);
+    if (listed !== 'unknown') return listed;
     try {
       const result = await this.client.graphql.query<{
-        subscriptionOrder?: {
-          id: string;
-          status?: string;
-          currentPeriodEnd?: string | null;
-        } | null;
+        subscriptionOrder?: WaffoRemoteOrder | null;
       }>({
         query: `query ($id: String!) {
           subscriptionOrder(id: $id) {
@@ -717,18 +737,49 @@ export class WaffoProvider implements PaymentProvider {
     }
   }
 
-  private mapRemoteSubscription(
-    remote: WaffoRemoteOrder | null,
-    localPeriodEnd: Date | null
-  ): {
+  private async findListedSubscriptionOrder(
+    orderId: string
+  ): Promise<WaffoRemoteOrder | null | 'unknown'> {
+    try {
+      const storeId = await this.getDefaultStoreId();
+      if (!storeId) return 'unknown';
+      const result = await this.client.graphql.query<{
+        subscriptionOrders?: WaffoRemoteOrder[];
+      }>({
+        query: `query ($storeId: String!) {
+          subscriptionOrders(storeId: $storeId) {
+            id
+            status
+            currentPeriodEnd
+          }
+        }`,
+        variables: { storeId },
+      });
+      if (result.errors?.length) {
+        console.warn('Waffo subscription orders query failed', result.errors);
+        return 'unknown';
+      }
+      const orders = result.data?.subscriptionOrders;
+      if (!orders) return 'unknown';
+      return orders.find((order) => order.id === orderId) ?? null;
+    } catch (error) {
+      this.logError('list subscription orders', error);
+      return 'unknown';
+    }
+  }
+
+  private mapRemoteSubscription(remote: WaffoRemoteOrder | null): {
     status: PaymentStatus;
     paid: boolean;
     cancelAtPeriodEnd: boolean;
   } {
-    const status = remote?.status;
+    const status = remote?.status?.toLowerCase();
     if (
       !remote ||
       status === 'canceled' ||
+      status === 'cancelled' ||
+      status === 'canceling' ||
+      status === 'cancelling' ||
       status === 'expired' ||
       status === 'closed'
     ) {
@@ -736,24 +787,6 @@ export class WaffoProvider implements PaymentProvider {
         status: 'canceled',
         paid: false,
         cancelAtPeriodEnd: false,
-      };
-    }
-    const periodEnd = remote.currentPeriodEnd
-      ? this.parseDate(remote.currentPeriodEnd)
-      : localPeriodEnd;
-    const periodOver = Boolean(periodEnd && periodEnd.getTime() <= Date.now());
-    if (status === 'canceling') {
-      if (periodOver) {
-        return {
-          status: 'canceled',
-          paid: false,
-          cancelAtPeriodEnd: false,
-        };
-      }
-      return {
-        status: 'active',
-        paid: true,
-        cancelAtPeriodEnd: true,
       };
     }
     return {
@@ -862,14 +895,13 @@ export class WaffoProvider implements PaymentProvider {
     status: string | undefined,
     fallback: PaymentStatus = 'active'
   ): PaymentStatus {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'past_due':
         return 'past_due';
-      // Still active until the current period ends; the pending cancellation
-      // is tracked separately through payment.cancelAtPeriodEnd.
       case 'canceling':
-        return 'active';
+      case 'cancelling':
       case 'canceled':
+      case 'cancelled':
       case 'expired':
       case 'closed':
         return 'canceled';

@@ -174,8 +174,17 @@ export const createCustomerPortalSession = createServerFn({ method: 'POST' })
 
 export const getPaymentHistory = createServerFn({ method: 'GET' })
   .middleware([authApiMiddleware])
-  .handler(async ({ context }) =>
-    getDb()
+  .handler(async ({ context }) => {
+    if (websiteConfig.payment?.provider === 'waffo') {
+      try {
+        await getPaymentProvider().syncSubscriptionsFromProvider?.(
+          context.userId
+        );
+      } catch (error) {
+        console.warn('Skipped Waffo subscription sync', error);
+      }
+    }
+    return getDb()
       .select({
         id: payment.id,
         priceId: payment.priceId,
@@ -188,8 +197,8 @@ export const getPaymentHistory = createServerFn({ method: 'GET' })
       .from(payment)
       .where(eq(payment.userId, context.userId))
       .orderBy(desc(payment.createdAt))
-      .limit(50)
-  );
+      .limit(50);
+  });
 
 export const getCurrentPlan = createServerFn({ method: 'GET' })
   .middleware([authApiMiddleware])
