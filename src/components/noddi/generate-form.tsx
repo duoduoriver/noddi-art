@@ -181,15 +181,12 @@ function errorMessage(error: unknown) {
   const messages: Record<string, string> = {
     BUDGET_EXHAUSTED:
       'Generation is temporarily unavailable. Please try again later.',
-    CONTENT_POLICY: 'Please revise the prompt and try again.',
     DAILY_LIMIT_REACHED: 'You have reached today’s generation limit.',
     INSUFFICIENT_CREDITS: 'You do not have enough credits for this action.',
     PAID_ACCESS_REQUIRED: 'Upgrade your plan to continue generating.',
     EXPORT_FROZEN: 'Upgrade your plan to export this icon.',
     HD_MASTER_REQUIRED:
       'This export needs a 1024 × 1024 HD master. Generate it and try again.',
-    MODERATION_UNAVAILABLE:
-      'Safety checks are unavailable. Please try again shortly.',
     PROVIDER_UNAVAILABLE:
       'The image provider rejected this request. Please try again later.',
     INVALID_IMAGE:

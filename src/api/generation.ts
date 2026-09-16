@@ -17,11 +17,6 @@ import {
   listCreditLedger as listCreditLedgerForUser,
 } from '@/credits/service';
 import { authApiMiddleware } from '@/middlewares/auth-middleware';
-import {
-  getImageChannels,
-  ImageProviderError,
-  moderatePrompt,
-} from '@/image/openai-compat';
 import { getOperationalSettings } from '@/generation/settings';
 import { isFreeExportAllowed } from '@/export/access';
 import {
@@ -99,62 +94,7 @@ function projectNameFromPrompt(prompt: string) {
   return firstLine.slice(0, 120);
 }
 
-function compilePrompt(brief: z.infer<typeof briefSchema>) {
-  return [
-    'Create an app icon concept sheet for noddi.',
-    `Product or use: ${brief.productDescription}`,
-    `Icon subject: ${brief.iconSubject}`,
-    `Style: ${brief.style}`,
-    `Primary color: ${brief.primaryColor}`,
-    `Background preference: ${brief.background}`,
-    brief.avoid ? `Avoid: ${brief.avoid}` : '',
-    brief.notes ? `Additional direction: ${brief.notes}` : '',
-    'Output exactly one 1024x1024 image divided into four equal 512x512 quadrants.',
-    'Each quadrant must be a complete independent icon concept. No text, letters, watermarks, borders crossing quadrants, or shared elements.',
-  ]
-    .filter(Boolean)
-    .join('\n');
-}
-
-async function moderate(prompt: string, requestId: string) {
-  const channels = getImageChannels();
-  try {
-    const primary = await moderatePrompt(
-      channels.primary,
-      prompt,
-      `moderation:${requestId}:primary`
-    );
-    if (primary === 'flagged') throw new GenerationError('CONTENT_POLICY');
-    if (primary === 'clear' || !channels.fallback) return;
-  } catch (error) {
-    if (error instanceof GenerationError) throw error;
-    if (
-      !(error instanceof ImageProviderError) ||
-      !error.retryable ||
-      !channels.fallback
-    ) {
-      throw new GenerationError('MODERATION_UNAVAILABLE');
-    }
-  }
-  if (!channels.fallback) return;
-  try {
-    const fallback = await moderatePrompt(
-      channels.fallback,
-      prompt,
-      `moderation:${requestId}:fallback`
-    );
-    if (fallback === 'flagged') throw new GenerationError('CONTENT_POLICY');
-  } catch (error) {
-    if (error instanceof GenerationError) throw error;
-    throw new GenerationError('MODERATION_UNAVAILABLE');
-  }
-}
-
-async function assertGenerationCanStart(
-  _userId: string,
-  prompt: string,
-  requestId: string
-) {
+async function assertGenerationCanStart() {
   const settings = await getOperationalSettings();
   if (
     !settings.generationEnabled ||
@@ -163,7 +103,6 @@ async function assertGenerationCanStart(
   ) {
     throw new GenerationError('BUDGET_EXHAUSTED');
   }
-  await moderate(prompt, requestId);
   return settings;
 }
 
@@ -208,12 +147,7 @@ export const startProject = createServerFn({ method: 'POST' })
       data.referenceFileIds
     );
     const brief = briefFromSettings(data, referenceFileIds);
-    const prompt = compilePrompt(brief);
-    const settings = await assertGenerationCanStart(
-      context.userId,
-      prompt,
-      data.requestId
-    );
+    const settings = await assertGenerationCanStart();
     const timestamp = new Date();
     const projectId = crypto.randomUUID();
     const jobId = crypto.randomUUID();
@@ -279,11 +213,7 @@ export const generateVersion = createServerFn({ method: 'POST' })
       data.referenceFileIds
     );
     const brief = briefFromSettings(data, referenceFileIds);
-    const settings = await assertGenerationCanStart(
-      context.userId,
-      compilePrompt(brief),
-      data.requestId
-    );
+    const settings = await assertGenerationCanStart();
     const timestamp = new Date();
     const job = {
       id: crypto.randomUUID(),
@@ -354,11 +284,7 @@ export const generateFinal = createServerFn({ method: 'POST' })
       )
       .limit(1);
     if (!project || !sheet) throw new GenerationError('PROJECT_NOT_FOUND');
-    const settings = await assertGenerationCanStart(
-      context.userId,
-      `Create one polished app icon from candidate ${data.candidate}.\n${compilePrompt(JSON.parse(project.brief))}`,
-      data.requestId
-    );
+    const settings = await assertGenerationCanStart();
     const timestamp = new Date();
     const cost =
       data.quality === 'high'
@@ -428,11 +354,7 @@ export const reviseFinal = createServerFn({ method: 'POST' })
       .where(eq(projectVersions.parentFinalId, data.finalId))
       .limit(1);
     if (revision) throw new GenerationError('REVISION_ALREADY_EXISTS');
-    const settings = await assertGenerationCanStart(
-      context.userId,
-      data.instruction,
-      data.requestId
-    );
+    const settings = await assertGenerationCanStart();
     const timestamp = new Date();
     const job = {
       id: crypto.randomUUID(),
@@ -846,11 +768,7 @@ export const ensureHdMaster = createServerFn({ method: 'POST' })
         creditCost: HD_MASTER_CREDIT_COST,
       };
 
-    await assertGenerationCanStart(
-      context.userId,
-      'Prepare a faithful 1024x1024 production master from an existing generated app icon.',
-      crypto.randomUUID()
-    );
+    await assertGenerationCanStart();
     const credit = await getCreditSummaryForUser(context.userId);
     if (credit.planBalance + credit.purchasedBalance < HD_MASTER_CREDIT_COST)
       throw new GenerationError('INSUFFICIENT_CREDITS');

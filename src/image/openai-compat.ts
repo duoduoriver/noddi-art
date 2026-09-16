@@ -7,7 +7,6 @@ const IMAGE_REQUEST_TIMEOUT_MS = 5 * 60_000;
 const E2E_IMAGE_MODEL = 'e2e-fake-image';
 
 export type ImageChannelName = 'primary' | 'fallback';
-export type ImageOperation = 'generation' | 'edit' | 'moderation';
 export type ImageQuality = 'low' | 'medium' | 'high';
 
 export type ImageChannel = {
@@ -217,37 +216,6 @@ async function postJson(
   });
   if (!response.ok) await classifyResponse(response, await response.text());
   return response.json() as Promise<Record<string, unknown>>;
-}
-
-export async function moderatePrompt(
-  channel: ImageChannel,
-  prompt: string,
-  idempotencyKey: string
-): Promise<'clear' | 'flagged' | 'unsupported'> {
-  if (isE2EFakeChannel(channel)) return 'clear';
-
-  try {
-    const body = await postJson(
-      channel,
-      '/moderations',
-      { input: prompt, model: channel.model },
-      idempotencyKey
-    );
-    const result = Array.isArray(body.results) ? body.results[0] : undefined;
-    return result &&
-      typeof result === 'object' &&
-      (result as { flagged?: boolean }).flagged
-      ? 'flagged'
-      : 'clear';
-  } catch (error) {
-    if (
-      error instanceof ImageProviderError &&
-      [404, 405, 501].includes(error.status ?? 0)
-    ) {
-      return 'unsupported';
-    }
-    throw error;
-  }
 }
 
 export async function generateImage(

@@ -812,7 +812,6 @@
   "noddi_error_INSUFFICIENT_CREDITS": "You do not have enough credits for this generation.",
   "noddi_error_PAID_ACCESS_REQUIRED": "A subscription, pack, or administrator grant is required for finals and exports.",
   "noddi_error_TURNSTILE_FAILED": "Bot verification failed. Please try again.",
-  "noddi_error_CONTENT_POLICY": "This request cannot be generated.",
   "noddi_generate_prompt": "Describe the icon you want",
   "noddi_generate_prompt_placeholder": "Example: a playful focus timer icon, black ink sketch lines, violet halo, lime accent, no text or watermark.",
   "noddi_sidebar_create": "Create",

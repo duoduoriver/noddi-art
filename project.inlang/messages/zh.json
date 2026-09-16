@@ -812,7 +812,6 @@
   "noddi_error_INSUFFICIENT_CREDITS": "你的积分不足以完成本次生成。",
   "noddi_error_PAID_ACCESS_REQUIRED": "最终图标和导出需要订阅、加油包或管理员授权。",
   "noddi_error_TURNSTILE_FAILED": "人机验证失败，请重试。",
-  "noddi_error_CONTENT_POLICY": "该请求无法生成。",
   "noddi_generate_prompt": "描述你想要的图标",
   "noddi_generate_prompt_placeholder": "例如：一个俏皮的专注计时器图标，黑色手绘线条、紫色光环、荧光绿点缀，不要文字或水印。",
   "noddi_sidebar_create": "创建",

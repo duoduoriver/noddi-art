@@ -87,7 +87,6 @@ vi.mock('@/middlewares/auth-middleware', () => ({ authApiMiddleware: {} }));
 vi.mock('@/image/openai-compat', () => ({
   getImageChannels: vi.fn(),
   ImageProviderError: class extends Error {},
-  moderatePrompt: vi.fn(),
 }));
 vi.mock('@/generation/settings', () => ({ getOperationalSettings: vi.fn() }));
 vi.mock('@/generation/types', () => ({
