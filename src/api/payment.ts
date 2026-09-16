@@ -21,6 +21,7 @@ import type {
 } from '@/payment/types';
 import { PaymentScenes, PaymentTypes } from '@/payment/types';
 import { websiteConfig } from '@/config/website';
+import { getBaseUrl } from '@/lib/urls';
 import { createServerFn } from '@tanstack/react-start';
 import { and, desc, eq, or } from 'drizzle-orm';
 import { z } from 'zod';
@@ -50,7 +51,7 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
     const price = findPriceInPlan(planId, priceId);
     if (!plan || !price || !price.priceId)
       throw new Error('Invalid product selection');
-    const baseUrl = process.env.VITE_BASE_URL ?? '';
+    const baseUrl = getBaseUrl();
     const origin = new URL(baseUrl).origin;
     const sameOrigin = (value: string | undefined, fallback: string) => {
       if (!value) return fallback;
@@ -58,14 +59,12 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
         throw new Error('Redirect URL must be same-origin');
       return value;
     };
-    const isCreem = websiteConfig.payment?.provider === 'creem';
+    const provider = getPaymentProvider();
     const cancel = sameOrigin(cancelUrl, `${baseUrl}/settings/billing`);
 
-    // For Stripe: {CHECKOUT_SESSION_ID} is replaced by Stripe on redirect,
-    // then the Payment page polls by sessionId until the webhook writes the DB record.
-    // For Creem: Creem does NOT replace URL placeholders and has its own
-    // payment confirmation page, so redirect straight to billing.
-    const success = isCreem
+    // Stripe replaces {CHECKOUT_SESSION_ID} on redirect. Providers that host
+    // their own confirmation page (Creem, Waffo) do not, so send buyers to billing.
+    const success = provider.hostsPostCheckoutPage
       ? sameOrigin(successUrl, `${baseUrl}/settings/billing`)
       : sameOrigin(
           successUrl,
@@ -134,7 +133,7 @@ export const createCustomerPortalSession = createServerFn({ method: 'POST' })
     if (provider.requiresCustomerId !== false && !row?.customerId) {
       throw new Error('No customer found for user');
     }
-    const baseUrl = process.env.VITE_BASE_URL ?? '';
+    const baseUrl = getBaseUrl();
     const returnUrl = data.returnUrl ?? `${baseUrl}/settings/billing`;
     if (new URL(returnUrl).origin !== new URL(baseUrl).origin) {
       throw new Error('Redirect URL must be same-origin');
