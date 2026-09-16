@@ -43,7 +43,7 @@ const candidateSchema = z.enum(['A', 'B', 'C', 'D']);
 const qualitySchema = z.enum(['medium', 'high']);
 const generationSettingsSchema = z.object({
   prompt: z.string().min(4).max(1_500),
-  style: z.string().min(1).max(100),
+  style: z.string().min(1).max(300),
   primaryColor: z.string().min(2).max(100),
   background: z.string().min(2).max(300),
   referenceFileIds: z.array(z.string().uuid()).max(4).default([]),
