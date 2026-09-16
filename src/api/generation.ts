@@ -2,6 +2,12 @@ import { env } from 'cloudflare:workers';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { websiteConfig } from '@/config/website';
+import {
+  getCreditSummary as getCreditSummaryForUser,
+  hasPaidAccess,
+  listCreditLedger as listCreditLedgerForUser,
+} from '@/credits/service';
 import { getDb } from '@/db';
 import {
   exportRecords,
@@ -11,19 +17,15 @@ import {
   projects,
   userFiles,
 } from '@/db/app.schema';
-import {
-  getCreditSummary as getCreditSummaryForUser,
-  hasPaidAccess,
-  listCreditLedger as listCreditLedgerForUser,
-} from '@/credits/service';
-import { authApiMiddleware } from '@/middlewares/auth-middleware';
-import { getOperationalSettings } from '@/generation/settings';
 import { isFreeExportAllowed } from '@/export/access';
+import { getOperationalSettings } from '@/generation/settings';
 import {
   GenerationError,
   HD_MASTER_CREDIT_COST,
   type NoddiJobMessage,
 } from '@/generation/types';
+import { authApiMiddleware } from '@/middlewares/auth-middleware';
+import { getPaymentProvider } from '@/payment';
 
 type QueueProducer = { send(message: NoddiJobMessage): Promise<void> };
 
@@ -617,6 +619,13 @@ export const getCreditSummary = createServerFn({ method: 'GET' })
   .handler(({ context }) => getCreditSummaryInternal(context.userId));
 
 async function getCreditSummaryInternal(userId: string) {
+  if (websiteConfig.payment?.provider === 'waffo') {
+    try {
+      await getPaymentProvider().syncSubscriptionsFromProvider?.(userId);
+    } catch (error) {
+      console.warn('Skipped Waffo subscription sync', error);
+    }
+  }
   return getCreditSummaryForUser(userId);
 }
 

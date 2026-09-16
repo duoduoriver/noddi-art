@@ -135,6 +135,13 @@ export interface CreateCheckoutParams {
    * should skip trials for this session.
    */
   isPlanChange?: boolean;
+  /**
+   * Existing Waffo/Stripe order id being replaced. Used to cancel leftover
+   * subscriptions after a plan change; not sent as a checkout field.
+   */
+  currentOrderId?: string;
+  /** Product/price id of the subscription this checkout replaces. */
+  currentPriceId?: string;
 }
 
 /**
@@ -216,4 +223,10 @@ export interface PaymentProvider {
    * Handle webhook events
    */
   handleWebhookEvent(payload: string, signature: string): Promise<void>;
+
+  /**
+   * Pull live subscription status from the provider and update local rows.
+   * Used when a dashboard cancel never reached our webhook.
+   */
+  syncSubscriptionsFromProvider?(userId: string): Promise<void>;
 }

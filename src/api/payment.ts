@@ -77,6 +77,8 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
         );
     const scene = price.type === 'one_time' ? 'credits' : 'subscription';
     let isPlanChange = false;
+    let currentOrderId: string | undefined;
+    let currentPriceId: string | undefined;
     if (scene === 'subscription') {
       const [active] = await db
         .select({
@@ -106,6 +108,8 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
           );
         }
         isPlanChange = true;
+        currentOrderId = active.id;
+        currentPriceId = active.priceId;
       }
     }
     // Product facts and credit metadata are server-owned; client metadata is ignored.
@@ -129,6 +133,8 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
       cancelUrl: cancel,
       metadata: checkoutMetadata,
       isPlanChange,
+      currentOrderId,
+      currentPriceId,
     });
     return { url: result.url, id: result.id };
   });
@@ -196,10 +202,17 @@ export const getCurrentPlan = createServerFn({ method: 'GET' })
       .where(eq(user.id, userId))
       .limit(1);
     const hasCustomerId = Boolean(billingUser?.customerId);
-    // Reading account information must not initialize a payment client or
-    // require checkout secrets. Waffo uses its shared customer portal.
+    // Billing reads must not require Stripe/Creem secrets. Waffo may still
+    // pull live order status when a dashboard cancel missed the webhook.
     const portalRequiresCustomerId =
       websiteConfig.payment?.provider !== 'waffo';
+    if (websiteConfig.payment?.provider === 'waffo') {
+      try {
+        await getPaymentProvider().syncSubscriptionsFromProvider?.(userId);
+      } catch (error) {
+        console.warn('Skipped Waffo subscription sync', error);
+      }
+    }
     const [paymentHistory] = await db
       .select({ id: payment.id })
       .from(payment)

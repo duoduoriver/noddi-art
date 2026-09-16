@@ -68,30 +68,39 @@ export async function grantSignupCredits(userId: string) {
     .onConflictDoNothing();
 }
 
-async function expirePlanCredits(userId: string, at = now()) {
+async function expirePlanCredits(userId: string, at = now(), force = false) {
   const [account] = await getDb()
     .select()
     .from(creditAccounts)
     .where(eq(creditAccounts.userId, userId))
     .limit(1);
-  if (account?.periodEnd && account.periodEnd.getTime() <= at.getTime()) {
-    await getDb()
-      .update(creditAccounts)
-      .set({
-        planBalance: 0,
-        planCode: 'free',
-        planAllowance: FREE_SIGNUP_CREDITS,
-        periodEnd: null,
-        version: sql`${creditAccounts.version} + 1`,
-        updatedAt: at,
-      })
-      .where(
-        and(
-          eq(creditAccounts.userId, userId),
-          eq(creditAccounts.version, account.version)
-        )
-      );
-  }
+  if (!account) return;
+  const periodElapsed = Boolean(
+    account.periodEnd && account.periodEnd.getTime() <= at.getTime()
+  );
+  if (force && account.planCode === 'free') return;
+  if (!force && !periodElapsed) return;
+  await getDb()
+    .update(creditAccounts)
+    .set({
+      planBalance: 0,
+      planCode: 'free',
+      planAllowance: FREE_SIGNUP_CREDITS,
+      periodEnd: null,
+      version: sql`${creditAccounts.version} + 1`,
+      updatedAt: at,
+    })
+    .where(
+      and(
+        eq(creditAccounts.userId, userId),
+        eq(creditAccounts.version, account.version)
+      )
+    );
+}
+
+/** Drop a paid plan when Waffo reports the subscription has ended. */
+export async function endSubscriptionCredits(userId: string) {
+  await expirePlanCredits(userId, now(), true);
 }
 
 export async function getCreditSummary(userId: string): Promise<CreditSummary> {

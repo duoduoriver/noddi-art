@@ -13,6 +13,12 @@ const mocks = vi.hoisted(() => ({
   set: vi.fn(),
   where: vi.fn(),
   revokeCreditsForRefund: vi.fn(),
+  graphqlQuery: vi.fn(),
+  cancelSubscription: vi.fn(),
+  createGroup: vi.fn(),
+  updateGroup: vi.fn(),
+  publishGroup: vi.fn(),
+  endSubscriptionCredits: vi.fn(),
 }));
 
 vi.mock('@waffo/pancake-ts', () => ({
@@ -21,6 +27,17 @@ vi.mock('@waffo/pancake-ts', () => ({
       authenticated: {
         create: mocks.createCheckout,
       },
+    };
+    graphql = {
+      query: mocks.graphqlQuery,
+    };
+    orders = {
+      cancelSubscription: mocks.cancelSubscription,
+    };
+    subscriptionProductGroups = {
+      create: mocks.createGroup,
+      update: mocks.updateGroup,
+      publish: mocks.publishGroup,
     };
   },
   verifyWebhook: mocks.verifyWebhook,
@@ -68,6 +85,7 @@ vi.mock('@/credits/service', () => ({
   grantPurchasedCredits: vi.fn(),
   grantSubscriptionPeriod: vi.fn(),
   revokeCreditsForRefund: mocks.revokeCreditsForRefund,
+  endSubscriptionCredits: mocks.endSubscriptionCredits,
 }));
 
 vi.mock('@/lib/price-plan', () => ({
@@ -78,6 +96,23 @@ vi.mock('@/lib/price-plan', () => ({
     amount: 990,
     currency: 'USD',
   })),
+}));
+
+vi.mock('@/config/website', () => ({
+  websiteConfig: {
+    payment: {
+      price: {
+        plans: {
+          pro: {
+            prices: [{ type: 'subscription', priceId: 'PROD_pro' }],
+          },
+          studio: {
+            prices: [{ type: 'subscription', priceId: 'PROD_studio' }],
+          },
+        },
+      },
+    },
+  },
 }));
 
 import { WaffoProvider } from '@/payment/provider/waffo';
@@ -99,6 +134,12 @@ describe('Waffo provider boundary', () => {
     mocks.set.mockReset();
     mocks.where.mockReset();
     mocks.revokeCreditsForRefund.mockReset();
+    mocks.graphqlQuery.mockReset();
+    mocks.cancelSubscription.mockReset();
+    mocks.createGroup.mockReset();
+    mocks.updateGroup.mockReset();
+    mocks.publishGroup.mockReset();
+    mocks.endSubscriptionCredits.mockReset();
     mocks.insert.mockReturnValue({ values: mocks.values });
     mocks.update.mockReturnValue({ set: mocks.set });
     mocks.select.mockReturnValue({ from: mocks.from });
@@ -108,6 +149,22 @@ describe('Waffo provider boundary', () => {
     mocks.limit.mockResolvedValue([]);
     mocks.values.mockResolvedValue(undefined);
     mocks.where.mockResolvedValue(undefined);
+    mocks.graphqlQuery.mockImplementation(
+      async ({ query }: { query: string }) => {
+        if (query.includes('stores {')) {
+          return { data: { stores: [{ id: 'STO_test' }] } };
+        }
+        return { data: { subscriptionProductGroups: [] } };
+      }
+    );
+    mocks.createGroup.mockResolvedValue({ group: { id: 'GRP_test' } });
+    mocks.updateGroup.mockResolvedValue({ group: { id: 'GRP_test' } });
+    mocks.publishGroup.mockResolvedValue({ group: { id: 'GRP_test' } });
+    mocks.cancelSubscription.mockResolvedValue({
+      orderId: 'ORD_old',
+      status: 'canceling',
+    });
+    mocks.endSubscriptionCredits.mockResolvedValue(undefined);
     mocks.createCheckout.mockResolvedValue({
       checkoutUrl: 'https://pancake.waffo.ai/checkout/CHK_test',
       sessionId: 'CHK_test',
@@ -197,18 +254,117 @@ describe('Waffo provider boundary', () => {
 
     await provider.createCheckout({
       planId: 'studio',
-      priceId: 'PROD_monthly',
+      priceId: 'PROD_studio',
       customerEmail: 'buyer@example.com',
       isPlanChange: true,
+      currentOrderId: 'ORD_pro',
+      currentPriceId: 'PROD_pro',
       metadata: { userId: 'user_123' },
     });
 
     expect(mocks.createCheckout).toHaveBeenCalledWith(
       expect.objectContaining({
         withTrial: false,
-        productId: 'PROD_monthly',
+        productId: 'PROD_studio',
       })
     );
+    expect(mocks.createGroup).toHaveBeenCalledWith({
+      storeId: 'STO_test',
+      name: 'Sunburst plans',
+      rules: { sharedTrial: true },
+      productIds: ['PROD_pro', 'PROD_studio'],
+    });
+    expect(mocks.publishGroup).toHaveBeenCalledWith({ id: 'GRP_test' });
+  });
+
+  test('still creates checkout when the product-group GraphQL lookup fails', async () => {
+    mocks.graphqlQuery.mockRejectedValue(new Error('graphql 400'));
+    const provider = new WaffoProvider();
+
+    await expect(
+      provider.createCheckout({
+        planId: 'studio',
+        priceId: 'PROD_studio',
+        customerEmail: 'buyer@example.com',
+        isPlanChange: true,
+        currentPriceId: 'PROD_pro',
+        metadata: { userId: 'user_123' },
+      })
+    ).resolves.toEqual({
+      id: 'CHK_test',
+      url: 'https://pancake.waffo.ai/checkout/CHK_test',
+    });
+    expect(mocks.createGroup).not.toHaveBeenCalled();
+    expect(mocks.createCheckout).toHaveBeenCalled();
+  });
+
+  test('does not recreate a product group that already covers both plans', async () => {
+    mocks.graphqlQuery.mockImplementation(
+      async ({ query }: { query: string }) => {
+        if (query.includes('stores {')) {
+          return { data: { stores: [{ id: 'STO_test' }] } };
+        }
+        return {
+          data: {
+            subscriptionProductGroups: [
+              {
+                id: 'GRP_existing',
+                productIds: ['PROD_pro', 'PROD_studio'],
+              },
+            ],
+          },
+        };
+      }
+    );
+    const provider = new WaffoProvider();
+
+    await provider.createCheckout({
+      planId: 'studio',
+      priceId: 'PROD_studio',
+      customerEmail: 'buyer@example.com',
+      isPlanChange: true,
+      currentPriceId: 'PROD_pro',
+      metadata: { userId: 'user_123' },
+    });
+
+    expect(mocks.createGroup).not.toHaveBeenCalled();
+    expect(mocks.updateGroup).not.toHaveBeenCalled();
+    expect(mocks.publishGroup).not.toHaveBeenCalled();
+  });
+
+  test('adds the missing plan to an overlapping product group', async () => {
+    mocks.graphqlQuery.mockImplementation(
+      async ({ query }: { query: string }) => {
+        if (query.includes('stores {')) {
+          return { data: { stores: [{ id: 'STO_test' }] } };
+        }
+        return {
+          data: {
+            subscriptionProductGroups: [
+              { id: 'GRP_existing', productIds: ['PROD_pro'] },
+            ],
+          },
+        };
+      }
+    );
+    const provider = new WaffoProvider();
+
+    await provider.createCheckout({
+      planId: 'studio',
+      priceId: 'PROD_studio',
+      customerEmail: 'buyer@example.com',
+      isPlanChange: true,
+      currentPriceId: 'PROD_pro',
+      metadata: { userId: 'user_123' },
+    });
+
+    expect(mocks.updateGroup).toHaveBeenCalledWith({
+      id: 'GRP_existing',
+      productIds: ['PROD_pro', 'PROD_studio'],
+      rules: { sharedTrial: true },
+    });
+    expect(mocks.createGroup).not.toHaveBeenCalled();
+    expect(mocks.publishGroup).toHaveBeenCalledWith({ id: 'GRP_existing' });
   });
 
   test('records an order.completed webhook using existing payment columns', async () => {
@@ -454,12 +610,14 @@ describe('Waffo provider boundary', () => {
         currentPeriodStart: '2026-09-16T00:00:00.000Z',
         currentPeriodEnd: '2026-10-16T00:00:00.000Z',
         orderMetadata: {
-          planId: 'pro',
+          planId: 'studio',
           priceId: 'PROD_studio',
           userId: 'user_123',
         },
       },
     });
+
+    mocks.limit.mockResolvedValueOnce([{ id: 'ORD_pro' }]);
 
     await new WaffoProvider().handleWebhookEvent(
       '{"eventType":"subscription.plan_changed"}',
@@ -477,6 +635,52 @@ describe('Waffo provider boundary', () => {
         type: 'subscription',
       })
     );
+    expect(mocks.cancelSubscription).toHaveBeenCalledWith({
+      orderId: 'ORD_pro',
+    });
+    expect(mocks.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'canceled',
+        cancelAtPeriodEnd: false,
+      })
+    );
+  });
+
+  test('still marks the old plan canceled when Waffo cancel returns 400', async () => {
+    mocks.verifyWebhook.mockReturnValue({
+      id: 'delivery_plan_changed',
+      eventId: 'EVT_plan_changed',
+      eventType: 'subscription.plan_changed',
+      mode: 'test',
+      data: {
+        orderId: 'ORD_studio',
+        buyerEmail: 'buyer@example.com',
+        currency: 'USD',
+        amount: '29.00',
+        taxAmount: '0.00',
+        productName: 'Studio Monthly',
+        orderStatus: 'active',
+        billingPeriod: 'monthly',
+        currentPeriodStart: '2026-09-16T00:00:00.000Z',
+        currentPeriodEnd: '2026-10-16T00:00:00.000Z',
+        orderMetadata: {
+          planId: 'studio',
+          priceId: 'PROD_studio',
+          userId: 'user_123',
+        },
+      },
+    });
+    mocks.limit.mockResolvedValueOnce([{ id: 'ORD_pro' }]);
+    mocks.cancelSubscription.mockRejectedValueOnce(
+      new Error('Subscription cannot be canceled, current status: canceling')
+    );
+
+    await expect(
+      new WaffoProvider().handleWebhookEvent(
+        '{"eventType":"subscription.plan_changed"}',
+        'signed'
+      )
+    ).resolves.toBeUndefined();
     expect(mocks.set).toHaveBeenCalledWith(
       expect.objectContaining({
         status: 'canceled',
@@ -625,6 +829,118 @@ describe('Waffo provider boundary', () => {
       url: 'https://pancake.waffo.ai/consumer/portal/login',
     });
     expect(provider.requiresCustomerId).toBe(false);
+  });
+
+  test('syncs a Waffo-canceled order down to free credits', async () => {
+    mocks.limit
+      .mockResolvedValueOnce([
+        {
+          id: 'ORD_studio',
+          status: 'active',
+          periodEnd: new Date('2026-10-16T00:00:00.000Z'),
+        },
+      ])
+      .mockResolvedValueOnce([]);
+    mocks.graphqlQuery.mockResolvedValue({
+      data: {
+        subscriptionOrder: {
+          id: 'ORD_studio',
+          status: 'canceled',
+          currentPeriodEnd: '2026-10-16T00:00:00.000Z',
+        },
+      },
+    });
+
+    await new WaffoProvider().syncSubscriptionsFromProvider('user_123');
+
+    expect(mocks.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'canceled',
+        paid: false,
+        cancelAtPeriodEnd: false,
+      })
+    );
+    expect(mocks.endSubscriptionCredits).toHaveBeenCalledWith('user_123');
+  });
+
+  test('keeps Studio when Waffo reports canceling before period end', async () => {
+    mocks.limit.mockResolvedValueOnce([
+      {
+        id: 'ORD_studio',
+        status: 'active',
+        periodEnd: new Date('2026-10-16T00:00:00.000Z'),
+      },
+    ]);
+    mocks.graphqlQuery.mockResolvedValue({
+      data: {
+        subscriptionOrder: {
+          id: 'ORD_studio',
+          status: 'canceling',
+          currentPeriodEnd: '2026-10-16T00:00:00.000Z',
+        },
+      },
+    });
+
+    await new WaffoProvider().syncSubscriptionsFromProvider('user_123');
+
+    expect(mocks.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'active',
+        paid: true,
+        cancelAtPeriodEnd: true,
+      })
+    );
+    expect(mocks.endSubscriptionCredits).not.toHaveBeenCalled();
+  });
+
+  test('does not drop the local plan when the Waffo order query fails', async () => {
+    mocks.limit.mockResolvedValueOnce([
+      {
+        id: 'ORD_studio',
+        status: 'active',
+        periodEnd: new Date('2026-10-16T00:00:00.000Z'),
+      },
+    ]);
+    mocks.graphqlQuery.mockRejectedValue(new Error('graphql 400'));
+
+    await new WaffoProvider().syncSubscriptionsFromProvider('user_123');
+
+    expect(mocks.set).not.toHaveBeenCalled();
+    expect(mocks.endSubscriptionCredits).not.toHaveBeenCalled();
+  });
+
+  test('clears credits after subscription.canceled when no live plan remains', async () => {
+    mocks.verifyWebhook.mockReturnValue({
+      id: 'delivery_canceled',
+      eventId: 'EVT_canceled',
+      eventType: 'subscription.canceled',
+      mode: 'test',
+      data: {
+        orderId: 'ORD_studio',
+        buyerEmail: 'buyer@example.com',
+        currency: 'USD',
+        amount: '29.00',
+        taxAmount: '0.00',
+        productName: 'Studio Monthly',
+        orderStatus: 'canceled',
+        orderMetadata: { userId: 'user_123' },
+      },
+    });
+    mocks.limit.mockResolvedValueOnce([]);
+
+    await new WaffoProvider().handleWebhookEvent(
+      '{"eventType":"subscription.canceled"}',
+      'signed'
+    );
+
+    expect(mocks.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'canceled',
+        paid: false,
+        cancelAtPeriodEnd: false,
+      })
+    );
+    expect(mocks.endSubscriptionCredits).toHaveBeenCalledWith('user_123');
   });
 
   test('constructor throws when required env vars are missing', () => {

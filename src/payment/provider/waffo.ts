@@ -8,12 +8,14 @@ import {
   WebhookEventType,
 } from '@waffo/pancake-ts';
 import { and, eq, ne, or } from 'drizzle-orm';
+import { websiteConfig } from '@/config/website';
+import { isPaidPlan, type NoddiPackCode } from '@/credits/catalog';
 import {
+  endSubscriptionCredits,
   grantPurchasedCredits,
   grantSubscriptionPeriod,
   revokeCreditsForRefund,
 } from '@/credits/service';
-import { isPaidPlan, type NoddiPackCode } from '@/credits/catalog';
 import { getDb } from '@/db';
 import { payment } from '@/db/app.schema';
 import {
@@ -52,6 +54,20 @@ type SubscriptionUpdate = {
   syncPlan?: boolean;
 };
 
+type WaffoGroupRow = {
+  id: string;
+  productIds?: string[] | null;
+  products?: Array<{ id: string }> | null;
+};
+
+type WaffoRemoteOrder = {
+  status?: string;
+  currentPeriodEnd?: string | null;
+};
+
+const PLAN_GROUP_NAME = 'Sunburst plans';
+const RECONCILE_INTERVAL_MS = 60_000;
+
 /**
  * Waffo Pancake payment provider for fixed-price template plans.
  */
@@ -66,6 +82,7 @@ export class WaffoProvider implements PaymentProvider {
   readonly supportsPlanChangeCheckout = true;
 
   private client: WaffoPancake;
+  private reconcileAt = new Map<string, number>();
 
   constructor() {
     const merchantId = process.env.WAFFO_MERCHANT_ID;
@@ -91,6 +108,17 @@ export class WaffoProvider implements PaymentProvider {
       throw new Error(
         `Price ID ${params.priceId} not found in plan ${params.planId}`
       );
+    }
+
+    if (price.type === 'subscription') {
+      // Waffo only credits unused time when both products share a
+      // subscription product group. Without it, checkout opens a second
+      // independent subscription and both stay active.
+      await this.ensurePlanSwitchGroup([
+        ...this.getCatalogSubscriptionProductIds(),
+        params.priceId,
+        params.currentPriceId,
+      ]);
     }
 
     // Waffo exposes two checkout entry points:
@@ -159,6 +187,54 @@ export class WaffoProvider implements PaymentProvider {
     return { url: WAFFO_CUSTOMER_PORTAL_URL };
   }
 
+  async syncSubscriptionsFromProvider(userId: string): Promise<void> {
+    const last = this.reconcileAt.get(userId) ?? 0;
+    if (Date.now() - last < RECONCILE_INTERVAL_MS) return;
+    this.reconcileAt.set(userId, Date.now());
+    const rows = await getDb()
+      .select({
+        id: payment.id,
+        status: payment.status,
+        periodEnd: payment.periodEnd,
+      })
+      .from(payment)
+      .where(
+        and(
+          eq(payment.userId, userId),
+          eq(payment.type, PaymentTypes.SUBSCRIPTION)
+        )
+      )
+      .limit(20);
+    let sawRemote = false;
+    let hasLive = false;
+    for (const row of rows) {
+      const remote = await this.fetchSubscriptionOrder(row.id);
+      if (remote === 'unknown') {
+        if (row.status === 'active' || row.status === 'trialing') {
+          hasLive = true;
+        }
+        continue;
+      }
+      sawRemote = true;
+      const next = this.mapRemoteSubscription(remote, row.periodEnd);
+      if (next.status === 'active' || next.status === 'trialing') {
+        hasLive = true;
+      }
+      await getDb()
+        .update(payment)
+        .set({
+          status: next.status,
+          paid: next.paid,
+          cancelAtPeriodEnd: next.cancelAtPeriodEnd,
+          updatedAt: new Date(),
+        })
+        .where(eq(payment.id, row.id));
+    }
+    if (sawRemote && !hasLive) {
+      await endSubscriptionCredits(userId);
+    }
+  }
+
   async handleWebhookEvent(payload: string, signature: string): Promise<void> {
     try {
       const expectedMode = this.getExpectedMode();
@@ -224,6 +300,10 @@ export class WaffoProvider implements PaymentProvider {
             cancelAtPeriodEnd: false,
             paid: false,
           });
+          await this.endCreditsIfUnsubscribed(
+            this.getUserId(event.data),
+            event.data.orderId
+          );
           break;
         case WebhookEventType.RefundSucceeded:
           await this.revokeRefundedPayment(event);
@@ -435,17 +515,43 @@ export class WaffoProvider implements PaymentProvider {
     await getDb()
       .update(payment)
       .set(values)
-      .where(eq(payment.subscriptionId, data.orderId));
+      .where(
+        or(
+          eq(payment.subscriptionId, data.orderId),
+          eq(payment.id, data.orderId)
+        )
+      );
   }
 
   /**
    * A Waffo plan change ends the previous order and opens a new one.
    * Keep the old row for history, but stop treating it as the live plan.
+   * Also cancel the replaced order on Waffo — a local-only update leaves
+   * both subscriptions active in the merchant dashboard.
    */
   private async deactivateOtherSubscriptions(
     userId: string,
     currentOrderId: string
   ): Promise<void> {
+    this.reconcileAt.set(userId, Date.now());
+    const others = await getDb()
+      .select({ id: payment.id })
+      .from(payment)
+      .where(
+        and(
+          eq(payment.userId, userId),
+          eq(payment.type, PaymentTypes.SUBSCRIPTION),
+          ne(payment.id, currentOrderId)
+        )
+      )
+      .limit(20);
+    for (const row of others) {
+      try {
+        await this.client.orders.cancelSubscription({ orderId: row.id });
+      } catch (error) {
+        this.logError('cancel replaced subscription', error);
+      }
+    }
     await getDb()
       .update(payment)
       .set({
@@ -461,6 +567,230 @@ export class WaffoProvider implements PaymentProvider {
           or(eq(payment.status, 'active'), eq(payment.status, 'trialing'))
         )
       );
+  }
+
+  /**
+   * Put Pro/Studio in one subscription product group so hosted checkout
+   * treats a second purchase as a plan change and credits unused time.
+   * Listing groups via GraphQL can 400 on older schemas; checkout still
+   * proceeds if this setup fails.
+   */
+  private async ensurePlanSwitchGroup(
+    productIds: Array<string | undefined>
+  ): Promise<void> {
+    const ids = [
+      ...new Set(productIds.filter((id): id is string => Boolean(id))),
+    ].sort();
+    if (ids.length < 2) return;
+    try {
+      const storeId = await this.getDefaultStoreId();
+      if (!storeId) {
+        console.warn('Waffo plan group skipped: no store id');
+        return;
+      }
+      const groups = await this.listSubscriptionProductGroups(storeId);
+      const covering = groups.find((group) =>
+        ids.every((id) => this.groupProductIds(group).includes(id))
+      );
+      if (covering) return;
+      const overlapping = groups.find((group) =>
+        ids.some((id) => this.groupProductIds(group).includes(id))
+      );
+      if (overlapping) {
+        const merged = [
+          ...new Set([...this.groupProductIds(overlapping), ...ids]),
+        ];
+        await this.client.subscriptionProductGroups.update({
+          id: overlapping.id,
+          productIds: merged,
+          rules: { sharedTrial: true },
+        });
+        await this.publishPlanGroup(overlapping.id);
+        return;
+      }
+      const { group } = await this.client.subscriptionProductGroups.create({
+        storeId,
+        name: PLAN_GROUP_NAME,
+        rules: { sharedTrial: true },
+        productIds: ids,
+      });
+      await this.publishPlanGroup(group.id);
+    } catch (error) {
+      this.logError('ensure plan switch group', error);
+    }
+  }
+
+  private getCatalogSubscriptionProductIds(): string[] {
+    const plans = websiteConfig.payment?.price?.plans;
+    if (!plans) return [];
+    const ids: string[] = [];
+    for (const plan of Object.values(plans)) {
+      for (const price of plan.prices ?? []) {
+        if (price.type === 'subscription' && price.priceId) {
+          ids.push(price.priceId);
+        }
+      }
+    }
+    return ids;
+  }
+
+  private groupProductIds(group: WaffoGroupRow): string[] {
+    if (group.productIds?.length) return group.productIds;
+    return group.products?.map((product) => product.id) ?? [];
+  }
+
+  private async getDefaultStoreId(): Promise<string | undefined> {
+    const result = await this.client.graphql.query<{
+      stores?: Array<{ id: string }>;
+    }>({
+      query: 'query { stores { id } }',
+    });
+    if (result.errors?.length) {
+      console.warn('Waffo stores query failed', result.errors);
+      return undefined;
+    }
+    return result.data?.stores?.[0]?.id;
+  }
+
+  private async listSubscriptionProductGroups(
+    storeId: string
+  ): Promise<WaffoGroupRow[]> {
+    try {
+      const result = await this.client.graphql.query<{
+        subscriptionProductGroups?: WaffoGroupRow[];
+      }>({
+        query: `query ($storeId: String!) {
+          subscriptionProductGroups(storeId: $storeId) {
+            id
+            productIds
+          }
+        }`,
+        variables: { storeId },
+      });
+      if (result.errors?.length) {
+        console.warn('Waffo product group query failed', result.errors);
+        return [];
+      }
+      return result.data?.subscriptionProductGroups ?? [];
+    } catch (error) {
+      this.logError('list subscription product groups', error);
+      return [];
+    }
+  }
+
+  private async publishPlanGroup(groupId: string): Promise<void> {
+    try {
+      await this.client.subscriptionProductGroups.publish({ id: groupId });
+    } catch (error) {
+      this.logError('publish subscription product group', error);
+    }
+  }
+
+  private async fetchSubscriptionOrder(
+    orderId: string
+  ): Promise<WaffoRemoteOrder | null | 'unknown'> {
+    try {
+      const result = await this.client.graphql.query<{
+        subscriptionOrder?: {
+          id: string;
+          status?: string;
+          currentPeriodEnd?: string | null;
+        } | null;
+      }>({
+        query: `query ($id: String!) {
+          subscriptionOrder(id: $id) {
+            id
+            status
+            currentPeriodEnd
+          }
+        }`,
+        variables: { id: orderId },
+      });
+      if (result.errors?.length) {
+        console.warn('Waffo subscription order query failed', result.errors);
+        return 'unknown';
+      }
+      return result.data?.subscriptionOrder ?? null;
+    } catch (error) {
+      this.logError('fetch subscription order', error);
+      return 'unknown';
+    }
+  }
+
+  private mapRemoteSubscription(
+    remote: WaffoRemoteOrder | null,
+    localPeriodEnd: Date | null
+  ): {
+    status: PaymentStatus;
+    paid: boolean;
+    cancelAtPeriodEnd: boolean;
+  } {
+    const status = remote?.status;
+    if (
+      !remote ||
+      status === 'canceled' ||
+      status === 'expired' ||
+      status === 'closed'
+    ) {
+      return {
+        status: 'canceled',
+        paid: false,
+        cancelAtPeriodEnd: false,
+      };
+    }
+    const periodEnd = remote.currentPeriodEnd
+      ? this.parseDate(remote.currentPeriodEnd)
+      : localPeriodEnd;
+    const periodOver = Boolean(periodEnd && periodEnd.getTime() <= Date.now());
+    if (status === 'canceling') {
+      if (periodOver) {
+        return {
+          status: 'canceled',
+          paid: false,
+          cancelAtPeriodEnd: false,
+        };
+      }
+      return {
+        status: 'active',
+        paid: true,
+        cancelAtPeriodEnd: true,
+      };
+    }
+    return {
+      status: this.mapSubscriptionStatus(status, 'active'),
+      paid: true,
+      cancelAtPeriodEnd: false,
+    };
+  }
+
+  private async endCreditsIfUnsubscribed(
+    userId?: string,
+    orderId?: string
+  ): Promise<void> {
+    let resolvedUserId = userId;
+    if (!resolvedUserId && orderId) {
+      const [row] = await getDb()
+        .select({ userId: payment.userId })
+        .from(payment)
+        .where(or(eq(payment.id, orderId), eq(payment.subscriptionId, orderId)))
+        .limit(1);
+      resolvedUserId = row?.userId ?? undefined;
+    }
+    if (!resolvedUserId) return;
+    const [live] = await getDb()
+      .select({ id: payment.id })
+      .from(payment)
+      .where(
+        and(
+          eq(payment.userId, resolvedUserId),
+          eq(payment.type, PaymentTypes.SUBSCRIPTION),
+          or(eq(payment.status, 'active'), eq(payment.status, 'trialing'))
+        )
+      )
+      .limit(1);
+    if (!live) {
+      await endSubscriptionCredits(resolvedUserId);
+    }
   }
 
   /**
