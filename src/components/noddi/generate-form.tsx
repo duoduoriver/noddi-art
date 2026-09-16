@@ -26,7 +26,7 @@ import {
   IconWand,
   IconX,
 } from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import {
   type CSSProperties,
@@ -223,7 +223,9 @@ export function GenerateForm({
 }) {
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const hydratedProjectId = useRef<string | null>(null);
+  const creditJobSignature = useRef<string | null>(null);
   const [prompt, setPrompt] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [styleId, setStyleId] = useState('neo-brutalism-bold-flat');
@@ -290,6 +292,26 @@ export function GenerateForm({
   });
 
   const projectData = projectQuery.data;
+
+  useEffect(() => {
+    // Worker debit/refund happens after queueing; refresh navbar credits on job changes.
+    const jobs = projectData?.jobs ?? [];
+    const signature = jobs
+      .map(
+        (job) =>
+          `${job.id}:${job.status}:${job.planDebited}:${job.purchasedDebited}`
+      )
+      .join('|');
+    if (creditJobSignature.current === null) {
+      creditJobSignature.current = signature;
+      return;
+    }
+    if (creditJobSignature.current === signature) return;
+    creditJobSignature.current = signature;
+    void queryClient.invalidateQueries({ queryKey: ['noddi-credits'] });
+    void queryClient.invalidateQueries({ queryKey: ['noddi-ledger'] });
+  }, [projectData?.jobs, queryClient]);
+
   const generationVersions = useMemo(
     () =>
       (projectData?.versions ?? [])
