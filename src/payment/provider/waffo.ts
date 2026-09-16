@@ -7,7 +7,7 @@ import {
   type WebhookEventData,
   WebhookEventType,
 } from '@waffo/pancake-ts';
-import { eq, or } from 'drizzle-orm';
+import { and, eq, ne, or } from 'drizzle-orm';
 import {
   grantPurchasedCredits,
   grantSubscriptionPeriod,
@@ -16,7 +16,11 @@ import {
 import { isPaidPlan, type NoddiPackCode } from '@/credits/catalog';
 import { getDb } from '@/db';
 import { payment } from '@/db/app.schema';
-import { findPlanByPlanId, findPriceInPlan } from '@/lib/price-plan';
+import {
+  findPlanByPlanId,
+  findPlanByPriceId,
+  findPriceInPlan,
+} from '@/lib/price-plan';
 import { sendPaymentNotification } from '@/notification';
 import type {
   CheckoutResult,
@@ -57,6 +61,9 @@ export class WaffoProvider implements PaymentProvider {
 
   /** Waffo redirects buyers to its own confirmation page after payment. */
   readonly hostsPostCheckoutPage = true;
+
+  /** Plan changes complete on hosted checkout, not a separate portal. */
+  readonly supportsPlanChangeCheckout = true;
 
   private client: WaffoPancake;
 
@@ -104,11 +111,11 @@ export class WaffoProvider implements PaymentProvider {
         priceId: params.priceId,
       };
       const language = this.mapLocaleToWaffoLanguage(params.locale);
-      // Only enable the trial when the local price plan actually declares
-      // one. Waffo also honors the product-level trial setting when unset,
-      // so omit the flag if we have no explicit signal from our side.
-      const withTrial =
-        typeof price.trialPeriodDays === 'number' && price.trialPeriodDays > 0
+      // Plan changes cannot run a trial, and Waffo rejects a plan change
+      // while the current subscription is still trialing.
+      const withTrial = params.isPlanChange
+        ? false
+        : typeof price.trialPeriodDays === 'number' && price.trialPeriodDays > 0
           ? true
           : undefined;
       const darkMode =
@@ -187,7 +194,14 @@ export class WaffoProvider implements PaymentProvider {
           }
           break;
         case WebhookEventType.SubscriptionUpdated:
-          await this.updateSubscription(event, { syncPlan: true });
+          // Waffo plan changes open a new order. Treat this like an
+          // activation when we can attribute the buyer; otherwise sync
+          // price/interval on the existing row.
+          if (this.getUserId(event.data) && this.getPriceId(event.data)) {
+            await this.createSubscriptionPayment(event);
+          } else {
+            await this.updateSubscription(event, { syncPlan: true });
+          }
           break;
         case WebhookEventType.SubscriptionCanceling:
           await this.updateSubscription(event, {
@@ -218,6 +232,10 @@ export class WaffoProvider implements PaymentProvider {
           console.warn('Waffo refund failed:', event.eventId);
           break;
         default:
+          if (event.eventType === 'subscription.plan_changed') {
+            await this.createSubscriptionPayment(event);
+            break;
+          }
           console.warn(`Unhandled Waffo webhook event: ${event.eventType}`);
       }
     } catch (error) {
@@ -337,6 +355,7 @@ export class WaffoProvider implements PaymentProvider {
     const periodStart = this.parseDate(data.currentPeriodStart);
     const periodEnd = this.parseDate(data.currentPeriodEnd);
     const now = new Date();
+    let created = true;
     try {
       await getDb()
         .insert(payment)
@@ -363,9 +382,18 @@ export class WaffoProvider implements PaymentProvider {
         });
     } catch (error) {
       if (!this.isUniqueViolation(error)) throw error;
-      await this.updateSubscription(event, { status: 'active' });
+      created = false;
+      await this.updateSubscription(event, {
+        status: 'active',
+        syncPlan: true,
+      });
     }
-    const plan = findPlanByPlanId(data.orderMetadata?.planId ?? '');
+    if (created) {
+      await this.deactivateOtherSubscriptions(userId, data.orderId);
+    }
+    const plan =
+      findPlanByPlanId(data.orderMetadata?.planId ?? '') ??
+      findPlanByPriceId(priceId);
     const periodKey =
       periodStart?.toISOString() ?? data.paymentId ?? event.eventId;
     if (plan && isPaidPlan(plan.id)) {
@@ -408,6 +436,31 @@ export class WaffoProvider implements PaymentProvider {
       .update(payment)
       .set(values)
       .where(eq(payment.subscriptionId, data.orderId));
+  }
+
+  /**
+   * A Waffo plan change ends the previous order and opens a new one.
+   * Keep the old row for history, but stop treating it as the live plan.
+   */
+  private async deactivateOtherSubscriptions(
+    userId: string,
+    currentOrderId: string
+  ): Promise<void> {
+    await getDb()
+      .update(payment)
+      .set({
+        status: 'canceled',
+        cancelAtPeriodEnd: false,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(payment.userId, userId),
+          eq(payment.type, PaymentTypes.SUBSCRIPTION),
+          ne(payment.id, currentOrderId),
+          or(eq(payment.status, 'active'), eq(payment.status, 'trialing'))
+        )
+      );
   }
 
   /**

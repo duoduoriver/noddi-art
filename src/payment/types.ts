@@ -129,6 +129,12 @@ export interface CreateCheckoutParams {
    * hosted checkout ignores it.
    */
   theme?: 'dark' | 'light';
+  /**
+   * True when this checkout replaces an existing subscription (upgrade or
+   * downgrade). Hosted providers that change plans via a new checkout
+   * should skip trials for this session.
+   */
+  isPlanChange?: boolean;
 }
 
 /**
@@ -182,6 +188,14 @@ export interface PaymentProvider {
    * Defaults to false when omitted (behaves like Stripe).
    */
   readonly hostsPostCheckoutPage?: boolean;
+
+  /**
+   * Whether a buyer with an active subscription can start a new checkout
+   * to change plans. Waffo treats that as an upgrade/downgrade on the
+   * hosted checkout page. Stripe/Creem manage changes in the portal
+   * instead. Defaults to false when omitted.
+   */
+  readonly supportsPlanChangeCheckout?: boolean;
 
   /**
    * Get the provider's name

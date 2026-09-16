@@ -192,6 +192,25 @@ describe('Waffo provider boundary', () => {
     );
   });
 
+  test('skips the trial when the checkout is a plan change', async () => {
+    const provider = new WaffoProvider();
+
+    await provider.createCheckout({
+      planId: 'studio',
+      priceId: 'PROD_monthly',
+      customerEmail: 'buyer@example.com',
+      isPlanChange: true,
+      metadata: { userId: 'user_123' },
+    });
+
+    expect(mocks.createCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({
+        withTrial: false,
+        productId: 'PROD_monthly',
+      })
+    );
+  });
+
   test('records an order.completed webhook using existing payment columns', async () => {
     mocks.verifyWebhook.mockReturnValue({
       id: 'delivery_123',
@@ -381,6 +400,9 @@ describe('Waffo provider boundary', () => {
   });
 
   test('syncs priceId and interval on subscription.updated (plan change)', async () => {
+    mocks.values.mockRejectedValueOnce(
+      new Error('UNIQUE constraint failed: payment.id')
+    );
     mocks.verifyWebhook.mockReturnValue({
       id: 'delivery_updated',
       eventId: 'EVT_updated',
@@ -410,6 +432,55 @@ describe('Waffo provider boundary', () => {
         interval: 'year',
         status: 'active',
         paid: true,
+      })
+    );
+  });
+
+  test('inserts a new order for subscription.plan_changed upgrades', async () => {
+    mocks.verifyWebhook.mockReturnValue({
+      id: 'delivery_plan_changed',
+      eventId: 'EVT_plan_changed',
+      eventType: 'subscription.plan_changed',
+      mode: 'test',
+      data: {
+        orderId: 'ORD_studio',
+        buyerEmail: 'buyer@example.com',
+        currency: 'USD',
+        amount: '29.00',
+        taxAmount: '0.00',
+        productName: 'Studio Monthly',
+        orderStatus: 'active',
+        billingPeriod: 'monthly',
+        currentPeriodStart: '2026-09-16T00:00:00.000Z',
+        currentPeriodEnd: '2026-10-16T00:00:00.000Z',
+        orderMetadata: {
+          planId: 'pro',
+          priceId: 'PROD_studio',
+          userId: 'user_123',
+        },
+      },
+    });
+
+    await new WaffoProvider().handleWebhookEvent(
+      '{"eventType":"subscription.plan_changed"}',
+      'signed'
+    );
+
+    expect(mocks.values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'ORD_studio',
+        subscriptionId: 'ORD_studio',
+        priceId: 'PROD_studio',
+        userId: 'user_123',
+        status: 'active',
+        paid: true,
+        type: 'subscription',
+      })
+    );
+    expect(mocks.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'canceled',
+        cancelAtPeriodEnd: false,
       })
     );
   });

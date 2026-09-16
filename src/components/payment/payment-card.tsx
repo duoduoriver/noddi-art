@@ -93,12 +93,17 @@ type PaymentCardProps = {
   sessionId: string | undefined;
   hostedPostCheckout?: boolean;
   callback?: string;
+  expectedPlan?: string;
 };
 
 function checkoutCreditsGranted(
-  summary: Awaited<ReturnType<typeof getCreditSummary>> | null | undefined
+  summary: Awaited<ReturnType<typeof getCreditSummary>> | null | undefined,
+  expectedPlan?: string
 ): boolean {
   if (!summary) return false;
+  if (expectedPlan && expectedPlan !== 'free') {
+    return summary.planCode === expectedPlan;
+  }
   return (
     summary.planCode !== 'free' ||
     summary.purchasedBalance > 0 ||
@@ -112,6 +117,7 @@ export function PaymentCard({
   sessionId,
   hostedPostCheckout = false,
   callback = '/dashboard/credits',
+  expectedPlan,
 }: PaymentCardProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -142,7 +148,7 @@ export function PaymentCard({
           }
           if (paid) {
             const credits = await getCreditSummary();
-            if (checkoutCreditsGranted(credits)) {
+            if (checkoutCreditsGranted(credits, expectedPlan)) {
               queryClient.setQueryData(['noddi-credits'], credits);
               setStatus('success');
               pollEndRef.current = true;
@@ -157,7 +163,7 @@ export function PaymentCard({
       if (!pollEndRef.current) setStatus('timeout');
     };
     poll();
-  }, [sessionId, hostedPostCheckout, status, queryClient]);
+  }, [sessionId, hostedPostCheckout, expectedPlan, status, queryClient]);
   // On success: invalidate currentPlan then redirect to callback
   useEffect(() => {
     if (status !== 'success' || !callback) return;

@@ -21,6 +21,7 @@ import type {
 } from '@/payment/types';
 import { PaymentScenes, PaymentTypes } from '@/payment/types';
 import { websiteConfig } from '@/config/website';
+import { isPaidPlan } from '@/credits/catalog';
 import { getBaseUrl } from '@/lib/urls';
 import { createServerFn } from '@tanstack/react-start';
 import { and, desc, eq, or } from 'drizzle-orm';
@@ -61,24 +62,28 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
     };
     const provider = getPaymentProvider();
     const cancel = sameOrigin(cancelUrl, `${baseUrl}/settings/billing`);
+    const planQuery = isPaidPlan(plan.id) ? `&plan=${plan.id}` : '';
+    const returnQuery = `callback=/dashboard/credits${planQuery}`;
 
     // Stripe replaces {CHECKOUT_SESSION_ID} on redirect. Hosted providers
     // (Creem, Waffo) do not, so omit the placeholder and still land on the
     // in-app confirmation page. PaymentCard polls until the webhook grants
     // credits; skipping it races the first fetch and shows a 0 balance.
     const success = provider.hostsPostCheckoutPage
-      ? sameOrigin(
-          successUrl,
-          `${baseUrl}/settings/payment?callback=/dashboard/credits`
-        )
+      ? sameOrigin(successUrl, `${baseUrl}/settings/payment?${returnQuery}`)
       : sameOrigin(
           successUrl,
-          `${baseUrl}/settings/payment?session_id={CHECKOUT_SESSION_ID}&callback=/dashboard/credits`
+          `${baseUrl}/settings/payment?session_id={CHECKOUT_SESSION_ID}&${returnQuery}`
         );
     const scene = price.type === 'one_time' ? 'credits' : 'subscription';
+    let isPlanChange = false;
     if (scene === 'subscription') {
       const [active] = await db
-        .select({ id: payment.id })
+        .select({
+          id: payment.id,
+          priceId: payment.priceId,
+          status: payment.status,
+        })
         .from(payment)
         .where(
           and(
@@ -89,10 +94,19 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
           )
         )
         .limit(1);
-      if (active)
-        throw new Error(
-          'An active subscription already exists. Use Billing to manage it.'
-        );
+      if (active) {
+        const currentPlan = findPlanByPriceId(active.priceId);
+        const canChangePlan =
+          Boolean(provider.supportsPlanChangeCheckout) &&
+          currentPlan?.id !== plan.id &&
+          active.status !== 'trialing';
+        if (!canChangePlan) {
+          throw new Error(
+            'An active subscription already exists. Use Billing to manage it.'
+          );
+        }
+        isPlanChange = true;
+      }
     }
     // Product facts and credit metadata are server-owned; client metadata is ignored.
     const checkoutMetadata = {
@@ -114,6 +128,7 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
       successUrl: success,
       cancelUrl: cancel,
       metadata: checkoutMetadata,
+      isPlanChange,
     });
     return { url: result.url, id: result.id };
   });

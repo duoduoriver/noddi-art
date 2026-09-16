@@ -10,9 +10,11 @@ export const Route = createFileRoute('/settings/payment')({
   ): {
     session_id?: string;
     callback?: string;
+    plan?: string;
   } => ({
     session_id: typeof s?.session_id === 'string' ? s.session_id : undefined,
     callback: typeof s?.callback === 'string' ? s.callback : undefined,
+    plan: typeof s?.plan === 'string' ? s.plan : undefined,
   }),
   component: PaymentPage,
 });
@@ -36,6 +38,7 @@ function PaymentPage() {
         // string — and poll until the webhook grants credits.
         hostedPostCheckout={search.session_id === undefined}
         callback={search.callback ?? Routes.DashboardCredits}
+        expectedPlan={search.plan}
       />
     </DashboardLayout>
   );
