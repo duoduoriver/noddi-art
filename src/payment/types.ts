@@ -177,7 +177,8 @@ export interface PaymentProvider {
    * Stripe replaces `{CHECKOUT_SESSION_ID}` in the return URL, so we route
    * the buyer through an in-app confirmation page that polls by sessionId.
    * Providers that host their own confirmation page (Creem, Waffo) do not
-   * replace placeholders and should redirect straight to Billing instead.
+   * replace placeholders — still send them to `/settings/payment` without
+   * that token so PaymentCard can poll until credits are granted.
    * Defaults to false when omitted (behaves like Stripe).
    */
   readonly hostsPostCheckoutPage?: boolean;

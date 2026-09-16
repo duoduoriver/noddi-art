@@ -1,5 +1,6 @@
 import { m } from '@/locale/paraglide/messages';
-import { checkPaymentCompletion, getCurrentPlan } from '@/api/payment';
+import { getCreditSummary } from '@/api/generation';
+import { checkPaymentCompletion } from '@/api/payment';
 import {
   Card,
   CardDescription,
@@ -93,13 +94,24 @@ type PaymentCardProps = {
   hostedPostCheckout?: boolean;
   callback?: string;
 };
+
+function checkoutCreditsGranted(
+  summary: Awaited<ReturnType<typeof getCreditSummary>> | null | undefined
+): boolean {
+  if (!summary) return false;
+  return (
+    summary.planCode !== 'free' ||
+    summary.purchasedBalance > 0 ||
+    summary.paidAccess
+  );
+}
 /**
  * Payment result card: polls for completion, shows status, invalidates plan cache and redirects on success.
  */
 export function PaymentCard({
   sessionId,
   hostedPostCheckout = false,
-  callback = '/settings/billing',
+  callback = '/dashboard/credits',
 }: PaymentCardProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -108,9 +120,9 @@ export function PaymentCard({
   );
   const pollEndRef = useRef(false);
   const startRef = useRef<number>(0);
-  // Poll for payment completion: Stripe polls the payment record by
-  // sessionId, providers with a hosted post-checkout page (Creem, Waffo)
-  // poll the current plan because their webhooks carry no checkout session id.
+  // Stripe polls the payment record by sessionId. Hosted providers
+  // (Creem, Waffo) have no session id, so we poll the credit summary
+  // until the webhook grant lands, then redirect.
   useEffect(() => {
     if (status !== 'processing') return;
     pollEndRef.current = false;
@@ -121,18 +133,17 @@ export function PaymentCard({
         Date.now() - startRef.current < PAYMENT_MAX_POLL_TIME
       ) {
         try {
+          let paid = !sessionId && hostedPostCheckout;
           if (sessionId) {
             const result = await checkPaymentCompletion({
               data: { sessionId },
             });
-            if (result?.isPaid) {
-              setStatus('success');
-              pollEndRef.current = true;
-              return;
-            }
-          } else if (hostedPostCheckout) {
-            const result = await getCurrentPlan();
-            if (result?.currentPlan && !result.currentPlan.isFree) {
+            paid = Boolean(result?.isPaid);
+          }
+          if (paid) {
+            const credits = await getCreditSummary();
+            if (checkoutCreditsGranted(credits)) {
+              queryClient.setQueryData(['noddi-credits'], credits);
               setStatus('success');
               pollEndRef.current = true;
               return;
@@ -146,7 +157,7 @@ export function PaymentCard({
       if (!pollEndRef.current) setStatus('timeout');
     };
     poll();
-  }, [sessionId, hostedPostCheckout, status]);
+  }, [sessionId, hostedPostCheckout, status, queryClient]);
   // On success: invalidate currentPlan then redirect to callback
   useEffect(() => {
     if (status !== 'success' || !callback) return;
@@ -157,7 +168,11 @@ export function PaymentCard({
         queryClient.invalidateQueries({ queryKey: ['noddi-ledger'] }),
         queryClient.invalidateQueries({ queryKey: ['payment-history'] }),
       ]);
-      await queryClient.refetchQueries({ queryKey: ['currentPlan'] });
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['currentPlan'] }),
+        queryClient.refetchQueries({ queryKey: ['noddi-credits'] }),
+        queryClient.refetchQueries({ queryKey: ['noddi-ledger'] }),
+      ]);
       navigate({ to: callback });
     };
     run();

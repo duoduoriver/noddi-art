@@ -2,6 +2,7 @@ import { m } from '@/locale/paraglide/messages';
 import { createFileRoute, useSearch } from '@tanstack/react-router';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { PaymentCard } from '@/components/payment/payment-card';
+import { Routes } from '@/lib/routes';
 
 export const Route = createFileRoute('/settings/payment')({
   validateSearch: (
@@ -30,14 +31,11 @@ function PaymentPage() {
     >
       <PaymentCard
         sessionId={search.session_id}
-        // Providers with a hosted post-checkout page (Creem, Waffo) return
-        // with a callback but no checkout session id; treat that as hosted
-        // post-checkout mode so the card polls the current plan instead of
-        // failing.
-        hostedPostCheckout={
-          search.session_id === undefined && search.callback !== undefined
-        }
-        callback={search.callback ?? '/settings/billing'}
+        // Hosted providers (Creem, Waffo) return without a Stripe session
+        // id. Do not require `callback` — some hosts rewrite the query
+        // string — and poll until the webhook grants credits.
+        hostedPostCheckout={search.session_id === undefined}
+        callback={search.callback ?? Routes.DashboardCredits}
       />
     </DashboardLayout>
   );

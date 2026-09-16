@@ -6,8 +6,13 @@ import { websiteConfig } from '@/config/website';
 import { findPlanByPriceId } from '@/lib/price-plan';
 import { getLocale } from '@/lib/locale';
 import { m } from '@/locale/paraglide/messages';
+import {
+  PAYMENT_MAX_POLL_TIME,
+  PAYMENT_POLL_INTERVAL,
+} from '@/payment/constants';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import { useRef } from 'react';
 
 const ledgerLabels: Record<string, () => string> = {
   signup_grant: m.noddi_ledger_signup_grant,
@@ -40,18 +45,46 @@ const formatDate = (date: Date | string) =>
     new Date(date)
   );
 
+function checkoutCreditsGranted(data: {
+  planCode: string;
+  purchasedBalance: number;
+  paidAccess: boolean;
+}): boolean {
+  return (
+    data.planCode !== 'free' || data.purchasedBalance > 0 || data.paidAccess
+  );
+}
+
 export function CreditSummary() {
+  const mountedAt = useRef(Date.now());
+  const pollWhileCheckoutSettles = (hasGrant: boolean) => {
+    if (hasGrant) return false;
+    if (Date.now() - mountedAt.current >= PAYMENT_MAX_POLL_TIME) return false;
+    return PAYMENT_POLL_INTERVAL;
+  };
   const summary = useQuery({
     queryKey: ['noddi-credits'],
     queryFn: () => getCreditSummary(),
+    refetchInterval: (query) =>
+      pollWhileCheckoutSettles(
+        Boolean(query.state.data && checkoutCreditsGranted(query.state.data))
+      ),
   });
   const ledger = useQuery({
     queryKey: ['noddi-ledger'],
     queryFn: () => listCreditLedger(),
+    refetchInterval: () =>
+      pollWhileCheckoutSettles(
+        Boolean(summary.data && checkoutCreditsGranted(summary.data))
+      ),
   });
   const history = useQuery({
     queryKey: ['payment-history'],
     queryFn: () => getPaymentHistory(),
+    refetchInterval: () =>
+      pollWhileCheckoutSettles(
+        Boolean(summary.data && checkoutCreditsGranted(summary.data))
+      ),
   });
   if (summary.isPending)
     return (

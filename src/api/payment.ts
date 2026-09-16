@@ -62,13 +62,18 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
     const provider = getPaymentProvider();
     const cancel = sameOrigin(cancelUrl, `${baseUrl}/settings/billing`);
 
-    // Stripe replaces {CHECKOUT_SESSION_ID} on redirect. Providers that host
-    // their own confirmation page (Creem, Waffo) do not, so send buyers to billing.
+    // Stripe replaces {CHECKOUT_SESSION_ID} on redirect. Hosted providers
+    // (Creem, Waffo) do not, so omit the placeholder and still land on the
+    // in-app confirmation page. PaymentCard polls until the webhook grants
+    // credits; skipping it races the first fetch and shows a 0 balance.
     const success = provider.hostsPostCheckoutPage
-      ? sameOrigin(successUrl, `${baseUrl}/settings/billing`)
+      ? sameOrigin(
+          successUrl,
+          `${baseUrl}/settings/payment?callback=/dashboard/credits`
+        )
       : sameOrigin(
           successUrl,
-          `${baseUrl}/settings/payment?session_id={CHECKOUT_SESSION_ID}&callback=/settings/billing`
+          `${baseUrl}/settings/payment?session_id={CHECKOUT_SESSION_ID}&callback=/dashboard/credits`
         );
     const scene = price.type === 'one_time' ? 'credits' : 'subscription';
     if (scene === 'subscription') {
