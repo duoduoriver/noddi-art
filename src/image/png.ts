@@ -163,25 +163,6 @@ export async function encodeRaster(
   };
 }
 
-export function cropQuadrants(
-  image: PngImage
-): Record<'A' | 'B' | 'C' | 'D', PngImage> {
-  if (image.width !== 1024 || image.height !== 1024)
-    throw new Error('Concept sheet must be 1024×1024');
-  const crop = (left: number, top: number): PngImage => {
-    const data = new Uint8ClampedArray(512 * 512 * 4);
-    for (let row = 0; row < 512; row += 1) {
-      const sourceStart = ((top + row) * 1024 + left) * 4;
-      data.set(
-        image.data.subarray(sourceStart, sourceStart + 512 * 4),
-        row * 512 * 4
-      );
-    }
-    return { data, width: 512, height: 512 };
-  };
-  return { A: crop(0, 0), B: crop(512, 0), C: crop(0, 512), D: crop(512, 512) };
-}
-
 export async function resizePng(
   image: PngImage,
   width: number,

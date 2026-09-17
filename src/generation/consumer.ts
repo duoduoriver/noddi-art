@@ -19,7 +19,7 @@ import {
   refundGeneration,
 } from '@/credits/service';
 import { getOperationalSettings } from '@/generation/settings';
-import { stylePromptDirection } from '@/generation/style-presets';
+import { PROMPT_TEMPLATE_VERSION, promptForJob } from '@/generation/prompts';
 import { GenerationError, type NoddiJobMessage } from '@/generation/types';
 import {
   editImage,
@@ -29,12 +29,8 @@ import {
   type ImageCallResult,
   ImageProviderError,
 } from '@/image/openai-compat';
-import {
-  cropQuadrants,
-  decodePng,
-  encodePng,
-  normalizeToPng,
-} from '@/image/png';
+import { cropQuadrants } from '@/image/concept-sheet';
+import { decodePng, encodePng, normalizeToPng } from '@/image/png';
 
 function id() {
   return crypto.randomUUID();
@@ -300,25 +296,6 @@ async function getReferenceBytes(
   return [await readReference(asset.r2Key)];
 }
 
-function promptForJob(
-  job: typeof generationJobs.$inferSelect,
-  project: typeof projects.$inferSelect
-) {
-  const brief = JSON.parse(project.brief) as Record<string, string | string[]>;
-  if (job.operation === 'grid') {
-    const references = Array.isArray(brief.referenceFileIds)
-      ? brief.referenceFileIds.length
-      : 0;
-    const styleDirection = stylePromptDirection(brief.style);
-    return `Create a 1024x1024 noddi concept sheet. Product: ${brief.productDescription}. Subject: ${brief.iconSubject}. Style preset: ${brief.style}. Style direction: ${styleDirection} Primary color: ${brief.primaryColor}. Background: ${brief.background}. Treat the selected style direction as a strong visual constraint while preserving the user's requested subject and concept. Avoid: ${brief.avoid ?? ''}.${references ? ` Use the ${references} supplied reference image${references === 1 ? '' : 's'} as visual direction while still creating four fresh variations.` : ''} Exactly four equal independent 512x512 quadrants, each containing one independent app-icon concept. Keep every concept recognizable at small sizes. No text, lettering, typography, or watermark.`;
-  }
-  if (job.operation === 'revision')
-    return 'Revise the supplied noddi final icon using the stored user instruction. Keep it a single clean 1024x1024 icon with no text or watermark.';
-  if (job.operation === 'hd_master')
-    return 'Re-render the supplied app icon as one clean production-quality 1024x1024 icon. Preserve the original composition, shapes, colors, proportions, background, and visual identity as faithfully as possible. Do not redesign it, add details, add text, or add a watermark.';
-  return `Turn the supplied candidate ${job.candidate} into one polished 1024x1024 noddi app icon. Product: ${brief.productDescription}. Keep the icon independent, without text or watermark.`;
-}
-
 async function saveOutput(
   job: typeof generationJobs.$inferSelect,
   output: ImageCallResult
@@ -397,7 +374,7 @@ async function saveOutput(
     parentFinalId: job.operation === 'revision' ? job.inputVersionId : null,
     candidate: job.candidate,
     quality: job.quality,
-    promptTemplateVersion: 'noddi-v1',
+    promptTemplateVersion: PROMPT_TEMPLATE_VERSION,
     versionNumber,
     createdAt: new Date(),
   });
@@ -414,9 +391,9 @@ async function saveOutput(
     createdAt: new Date(),
   });
   if (job.operation === 'grid') {
-    const quadrants = cropQuadrants(image);
+    const quadrants = await cropQuadrants(image);
     for (const [candidate, crop] of Object.entries(quadrants) as Array<
-      [string, ReturnType<typeof cropQuadrants>['A']]
+      [string, Awaited<ReturnType<typeof cropQuadrants>>['A']]
     >) {
       const bytes = await encodePng(crop);
       const stored = await storePrivatePng(
