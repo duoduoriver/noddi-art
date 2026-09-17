@@ -860,7 +860,7 @@ export function GenerateForm({
     >
       <header className="mb-5">
         <h1 className="text-3xl font-extrabold tracking-[-0.04em] sm:text-4xl">
-          AI App Icon Generator
+          AI App Icon Generator for Developers
         </h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
           Generate app icon concepts, refine a favorite, and export

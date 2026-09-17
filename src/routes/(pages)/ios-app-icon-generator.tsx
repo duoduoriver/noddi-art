@@ -3,9 +3,10 @@ import { seo } from '@/lib/seo';
 import { createFileRoute } from '@tanstack/react-router';
 
 const path = '/ios-app-icon-generator';
-const title = 'iOS App Icon Generator with Xcode Export | Sunburst AI';
+const title =
+  'iOS App Icon Generator for Xcode & App Store | Sunburst AI';
 const description =
-  'Generate four AI app-icon concepts, pick the strongest direction, prepare a 1024px HD master, and export an iOS AppIcon package for Xcode from Sunburst AI.';
+  'Generate four AI iOS app-icon concepts, pick the strongest direction, prepare a 1024px HD master, and export an Xcode AppIcon package ready for App Store submission.';
 
 export const Route = createFileRoute('/(pages)/ios-app-icon-generator')({
   head: () =>
@@ -13,7 +14,7 @@ export const Route = createFileRoute('/(pages)/ios-app-icon-generator')({
       title,
       description,
       keywords:
-        'ios app icon generator, iphone app icon generator, ai ios icon generator, xcode app icon, appiconset generator',
+        'ios app icon generator, iphone app icon generator, ai ios icon generator, app store icon generator, xcode app icon, appiconset generator',
     }),
   component: IosAppIconGeneratorPage,
 });
@@ -22,7 +23,7 @@ function IosAppIconGeneratorPage() {
   return (
     <DeveloperExportPage
       eyebrow="IOS APP ICON GENERATOR"
-      title="Generate an iOS App Icon and Export It for Xcode"
+      title="iOS App Icon Generator for Xcode and the App Store"
       description={description}
       ctaHref="/generate?platform=ios&exportMode=packages"
       ctaLabel="Generate an iOS app icon"

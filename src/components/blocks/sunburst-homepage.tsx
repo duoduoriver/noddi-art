@@ -76,6 +76,12 @@ const exportCards = [
 
 const freeTools = [
   {
+    href: '/favicon-generator',
+    title: 'Free Favicon Generator',
+    copy: 'Build favicon.ico, Apple touch, PWA, and maskable icon assets.',
+    icon: IconWorld,
+  },
+  {
     href: '/app-icon-resizer',
     title: 'App Icon Resizer',
     copy: 'Resize one square icon into the sizes you actually need.',
@@ -92,12 +98,6 @@ const freeTools = [
     title: 'Android Mipmap Generator',
     copy: 'Generate launcher, adaptive, themed, and density assets.',
     icon: IconBrandAndroid,
-  },
-  {
-    href: '/favicon-generator',
-    title: 'Favicon + PWA Generator',
-    copy: 'Build favicon.ico, touch icons, PWA and maskable assets.',
-    icon: IconWorld,
   },
 ] as const;
 

@@ -4,9 +4,10 @@ import { seo } from '@/lib/seo';
 import { createFileRoute } from '@tanstack/react-router';
 
 const path = '/favicon-generator';
-const title = 'Free Favicon Generator with ICO, PNG & PWA Icons | Sunburst AI';
+const title =
+  'Free Favicon Generator for ICO, Apple Touch & PWA Icons | Sunburst AI';
 const description =
-  'Upload a square icon and create favicon.ico, PNG favicons, Apple touch icons, PWA icons, maskable assets, and a web manifest locally in your browser.';
+  'Use this free favicon generator to create favicon.ico, PNG favicons, Apple touch icons, PWA icons, maskable assets, and a web manifest locally in your browser.';
 
 export const Route = createFileRoute('/(pages)/favicon-generator')({
   head: () =>
@@ -23,7 +24,7 @@ function FaviconGeneratorPage() {
   return (
     <DeveloperExportPage
       eyebrow="FAVICON + PWA GENERATOR"
-      title="Generate Favicons, Apple Touch Icons, and PWA Assets Together"
+      title="Free Favicon Generator for ICO, Apple Touch, and PWA Icons"
       description={description}
       ctaHref="/generate?platform=web&exportMode=packages"
       ctaLabel="Generate a new icon with AI"
