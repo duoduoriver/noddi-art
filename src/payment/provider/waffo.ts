@@ -95,7 +95,25 @@ export class WaffoProvider implements PaymentProvider {
     if (!privateKey) {
       throw new Error('WAFFO_PRIVATE_KEY environment variable is not set');
     }
-    this.client = new WaffoPancake({ merchantId, privateKey });
+    this.client = new WaffoPancake({
+      merchantId,
+      privateKey,
+      fetch: (input, init) => {
+        const headers = new Headers(init?.headers);
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.href
+              : input.url;
+        // publish-* copies test catalog into production and must not be
+        // forced onto the live environment.
+        if (!url.includes('/publish')) {
+          headers.set('X-Environment', this.getExpectedMode());
+        }
+        return globalThis.fetch(input, { ...init, headers });
+      },
+    });
   }
 
   getProviderName(): string {
@@ -116,11 +134,18 @@ export class WaffoProvider implements PaymentProvider {
       // Waffo only credits unused time when both products share a
       // subscription product group. Without it, checkout opens a second
       // independent subscription and both stay active.
-      await this.ensurePlanSwitchGroup([
+      const subscriptionProductIds = [
         ...this.getCatalogSubscriptionProductIds(),
         params.priceId,
         params.currentPriceId,
-      ]);
+      ];
+      await this.ensurePlanSwitchGroup(subscriptionProductIds);
+      // Copy test-catalog products into production before live checkout.
+      for (const productId of new Set(subscriptionProductIds)) {
+        await this.publishCatalogProduct(productId, 'subscription');
+      }
+    } else {
+      await this.publishCatalogProduct(params.priceId, 'one_time');
     }
 
     // Waffo exposes two checkout entry points:
@@ -366,7 +391,7 @@ export class WaffoProvider implements PaymentProvider {
   /**
    * Waffo delivers `test` and `prod` events to the same endpoint, so a
    * production Worker must reject sandbox events or test purchases would grant
-   * real access. Set WAFFO_DEBUG=true to accept test events in production.
+   * real access. WAFFO_DEBUG=true is a temporary override for sandbox events.
    */
   private getExpectedMode(): 'test' | 'prod' {
     const useTestMode =
@@ -614,7 +639,10 @@ export class WaffoProvider implements PaymentProvider {
       const covering = groups.find((group) =>
         ids.every((id) => this.groupProductIds(group).includes(id))
       );
-      if (covering) return;
+      if (covering) {
+        await this.publishPlanGroup(covering.id);
+        return;
+      }
       const overlapping = groups.find((group) =>
         ids.some((id) => this.groupProductIds(group).includes(id))
       );
@@ -705,6 +733,22 @@ export class WaffoProvider implements PaymentProvider {
       await this.client.subscriptionProductGroups.publish({ id: groupId });
     } catch (error) {
       this.logError('publish subscription product group', error);
+    }
+  }
+
+  private async publishCatalogProduct(
+    productId: string,
+    type: 'subscription' | 'one_time'
+  ): Promise<void> {
+    if (!productId) return;
+    try {
+      if (type === 'subscription') {
+        await this.client.subscriptionProducts.publish({ id: productId });
+      } else {
+        await this.client.onetimeProducts.publish({ id: productId });
+      }
+    } catch (error) {
+      this.logError('publish catalog product', error);
     }
   }
 

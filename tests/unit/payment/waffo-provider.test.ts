@@ -18,6 +18,8 @@ const mocks = vi.hoisted(() => ({
   createGroup: vi.fn(),
   updateGroup: vi.fn(),
   publishGroup: vi.fn(),
+  publishSubscriptionProduct: vi.fn(),
+  publishOnetimeProduct: vi.fn(),
   endSubscriptionCredits: vi.fn(),
 }));
 
@@ -38,6 +40,12 @@ vi.mock('@waffo/pancake-ts', () => ({
       create: mocks.createGroup,
       update: mocks.updateGroup,
       publish: mocks.publishGroup,
+    };
+    subscriptionProducts = {
+      publish: mocks.publishSubscriptionProduct,
+    };
+    onetimeProducts = {
+      publish: mocks.publishOnetimeProduct,
     };
   },
   verifyWebhook: mocks.verifyWebhook,
@@ -139,6 +147,8 @@ describe('Waffo provider boundary', () => {
     mocks.createGroup.mockReset();
     mocks.updateGroup.mockReset();
     mocks.publishGroup.mockReset();
+    mocks.publishSubscriptionProduct.mockReset();
+    mocks.publishOnetimeProduct.mockReset();
     mocks.endSubscriptionCredits.mockReset();
     mocks.insert.mockReturnValue({ values: mocks.values });
     mocks.update.mockReturnValue({ set: mocks.set });
@@ -160,6 +170,12 @@ describe('Waffo provider boundary', () => {
     mocks.createGroup.mockResolvedValue({ group: { id: 'GRP_test' } });
     mocks.updateGroup.mockResolvedValue({ group: { id: 'GRP_test' } });
     mocks.publishGroup.mockResolvedValue({ group: { id: 'GRP_test' } });
+    mocks.publishSubscriptionProduct.mockResolvedValue({
+      product: { id: 'PROD_monthly' },
+    });
+    mocks.publishOnetimeProduct.mockResolvedValue({
+      product: { id: 'PROD_pack' },
+    });
     mocks.cancelSubscription.mockResolvedValue({
       orderId: 'ORD_old',
       status: 'canceling',
@@ -201,6 +217,15 @@ describe('Waffo provider boundary', () => {
       orderMerchantExternalId: expect.any(String),
       productId: 'PROD_monthly',
       successUrl: 'https://example.com/settings/billing',
+    });
+    expect(mocks.publishSubscriptionProduct).toHaveBeenCalledWith({
+      id: 'PROD_monthly',
+    });
+    expect(mocks.publishSubscriptionProduct).toHaveBeenCalledWith({
+      id: 'PROD_pro',
+    });
+    expect(mocks.publishSubscriptionProduct).toHaveBeenCalledWith({
+      id: 'PROD_studio',
     });
     // The order-scoped external id must be unique per checkout (not per user),
     // so assert it is a UUID rather than the userId.
@@ -329,7 +354,7 @@ describe('Waffo provider boundary', () => {
 
     expect(mocks.createGroup).not.toHaveBeenCalled();
     expect(mocks.updateGroup).not.toHaveBeenCalled();
-    expect(mocks.publishGroup).not.toHaveBeenCalled();
+    expect(mocks.publishGroup).toHaveBeenCalledWith({ id: 'GRP_existing' });
   });
 
   test('adds the missing plan to an overlapping product group', async () => {
