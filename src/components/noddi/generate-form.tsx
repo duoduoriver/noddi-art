@@ -858,6 +858,16 @@ export function GenerateForm({
       onSubmit={submit}
       className="mx-auto w-full max-w-[1600px] px-4 pb-8 pt-5 lg:px-6"
     >
+      <header className="mb-5">
+        <h1 className="text-3xl font-extrabold tracking-[-0.04em] sm:text-4xl">
+          AI App Icon Generator
+        </h1>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
+          Generate app icon concepts, refine a favorite, and export
+          developer-ready assets for iOS, Android, macOS, and the web.
+        </p>
+      </header>
+
       <div className="mb-3 overflow-x-auto rounded-xl border border-[#dedde3] bg-white px-3 py-2.5 shadow-[0_6px_18px_rgba(17,17,17,0.035)]">
         <div className="mx-auto flex min-w-[560px] max-w-3xl items-start justify-between">
           {WORKFLOW_STEPS.map(([label, hint], index) => {

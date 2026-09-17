@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getBaseUrl } from '@/lib/urls';
-import { websiteConfig } from '@/config/website';
 import {
   baseLocale,
   isLocalizedPath,
@@ -44,14 +43,11 @@ export const Route = createFileRoute('/sitemap.xml')({
           { path: '/favicon-sizes', lastmod: seoReleaseDate },
           { path: '/pwa-icon-sizes', lastmod: seoReleaseDate },
           { path: '/xcode-appiconset-guide', lastmod: seoReleaseDate },
+          { path: '/pricing', lastmod: seoReleaseDate },
           { path: '/terms' },
           { path: '/privacy' },
           { path: '/cookie' },
         ];
-
-        if (websiteConfig.payment?.enable) {
-          staticUrls.push({ path: '/pricing', lastmod: seoReleaseDate });
-        }
 
         const alternates = (path: string) => {
           if (!isLocalizedPath(path)) {
