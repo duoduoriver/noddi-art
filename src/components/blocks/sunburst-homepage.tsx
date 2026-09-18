@@ -1,5 +1,6 @@
 import { Button, buttonVariants } from '@/components/ui/button';
 import { PLAN_CATALOG } from '@/credits/catalog';
+import { HOME_FAQS } from '@/content/home-faqs';
 import { cn } from '@/lib/utils';
 import {
   IconArrowRight,
@@ -191,7 +192,7 @@ export function SunburstHomePage() {
           </span>
 
           <h1 className="mt-5 max-w-[760px] text-balance text-[2.9rem] font-extrabold leading-[0.98] tracking-[-0.05em] text-[#111] sm:text-[3.9rem] lg:text-[4.6rem]">
-            AI App Icon Generator for iOS, Android &amp; Web
+            AI App Icon Generator for Developers
           </h1>
 
           <p className="mt-6 max-w-2xl text-pretty text-base leading-7 text-[#6a6a72] sm:text-lg sm:leading-8">
@@ -398,6 +399,36 @@ export function SunburstHomePage() {
               </figcaption>
             </figure>
           ))}
+        </div>
+      </section>
+
+      <section id="faqs" className="sunburst-section">
+        <div className="mx-auto max-w-3xl">
+          <span className="sunburst-eyebrow">FAQ</span>
+          <h2 className="sunburst-section-title mt-4">
+            App icon generator questions
+          </h2>
+          <p className="mt-2 text-[#666]">
+            What developers usually ask before generating and exporting icons.
+          </p>
+          <div className="mt-8 space-y-3">
+            {HOME_FAQS.map((item) => (
+              <details
+                key={item.question}
+                className="group sunburst-card overflow-hidden"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-left text-base font-extrabold">
+                  {item.question}
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-black text-xl leading-none transition-transform group-open:rotate-45">
+                    +
+                  </span>
+                </summary>
+                <p className="border-t border-[#eceaf3] px-5 py-4 text-sm leading-7 text-[#666]">
+                  {item.answer}
+                </p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 

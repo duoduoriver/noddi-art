@@ -14,7 +14,7 @@ export const Route = createFileRoute('/generate')({
   }),
   head: () =>
     seo('/generate', {
-      title: 'AI App Icon Generator for iOS, Android & Web | Sunburst AI',
+      title: 'Generate App Icons | Sunburst AI',
       description:
         'Generate four AI app-icon concepts, pick a favorite, prepare an HD master when needed, and export Xcode AppIcon, Android adaptive icons, macOS ICNS, favicon, and PWA assets.',
     }),

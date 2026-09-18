@@ -1,5 +1,6 @@
 import { SunburstHomePage } from '@/components/blocks/sunburst-homepage';
 import { websiteConfig } from '@/config/website';
+import { HOME_FAQS } from '@/content/home-faqs';
 import { seo } from '@/lib/seo';
 import { getCanonicalUrl } from '@/lib/urls';
 import { getLocale, localeConfig } from '@/lib/locale';
@@ -36,6 +37,18 @@ export const Route = createFileRoute('/')({
         'Favicon and PWA asset export',
       ],
     };
+    const faqJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: HOME_FAQS.map((item) => ({
+        '@type': 'Question',
+        name: item.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: item.answer,
+        },
+      })),
+    };
     const metadata = seo('/', { title, description });
     return {
       ...metadata,
@@ -47,6 +60,10 @@ export const Route = createFileRoute('/')({
         {
           type: 'application/ld+json',
           children: JSON.stringify(softwareJsonLd),
+        },
+        {
+          type: 'application/ld+json',
+          children: JSON.stringify(faqJsonLd),
         },
       ],
     };

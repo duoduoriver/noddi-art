@@ -1,6 +1,7 @@
 import { createRouter } from '@tanstack/react-router';
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query';
 import { NuqsAdapter } from 'nuqs/adapters/tanstack-router';
+import { deLocalizeUrl, localizeUrl } from '@/lib/locale';
 import * as TanstackQuery from './integrations/tanstack-query/root-provider';
 import { routeTree } from './routeTree.gen';
 
@@ -17,6 +18,11 @@ export const getRouter = () => {
     context: { ...queryContext },
     defaultPreload: 'intent',
     scrollRestoration: true,
+    // Map /zh/... public URLs onto the canonical file routes (/pricing, etc.).
+    rewrite: {
+      input: ({ url }) => deLocalizeUrl(url),
+      output: ({ url }) => localizeUrl(url),
+    },
     // Wrap: provides NuqsAdapter and TanstackQuery.Provider for SSR
     // These providers wrap the entire route tree content (not RootDocument)
     // RootDocument (shellComponent)

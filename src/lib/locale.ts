@@ -1,9 +1,11 @@
 import {
   baseLocale,
   deLocalizeHref,
+  deLocalizeUrl,
   getLocale,
   locales,
   localizeHref,
+  localizeUrl,
   type Locale,
 } from '@/locale/paraglide/runtime';
 import { m } from '@/locale/paraglide/messages';
@@ -11,9 +13,11 @@ import { m } from '@/locale/paraglide/messages';
 export {
   baseLocale,
   deLocalizeHref,
+  deLocalizeUrl,
   getLocale,
   locales,
   localizeHref,
+  localizeUrl,
   type Locale,
 };
 
@@ -85,23 +89,15 @@ export function getCanonicalPathname(pathname: string) {
 }
 
 /**
- * Paths that are fully translated and should get hreflang alternates
- * in sitemap / SEO metadata. Blog posts (`/blog/<slug>`) are localized too,
- * but handled separately via {@link isLocalizedPath} since they're dynamic.
+ * Paths that actually exist and have translated chrome (navbar, legal, pricing).
+ * Do not list leftover template routes here — hreflang must not point at 404s.
  */
 export const LOCALIZED_PATHS = new Set([
   '/',
-  '/about',
-  '/ai',
-  '/blog',
-  '/changelog',
-  '/contact',
   '/cookie',
   '/pricing',
   '/privacy',
-  '/roadmap',
   '/terms',
-  '/waitlist',
 ]);
 
 /**
@@ -110,6 +106,5 @@ export const LOCALIZED_PATHS = new Set([
  * `seo()` metadata and the dynamic sitemap.
  */
 export function isLocalizedPath(path: string): boolean {
-  if (LOCALIZED_PATHS.has(path)) return true;
-  return path.startsWith('/blog/');
+  return LOCALIZED_PATHS.has(path);
 }

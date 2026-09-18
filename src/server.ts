@@ -2,6 +2,10 @@
 // This file is a good smoke test to make sure the custom server entry is working
 import handler from '@tanstack/react-start/server-entry';
 import type { consumeNoddiJobs } from '@/generation/consumer';
+import {
+  canonicalRedirectStatus,
+  getCanonicalOriginRedirect,
+} from '@/lib/canonical-origin';
 
 /**
  * TanStack Start server entry
@@ -14,6 +18,15 @@ export default {
     const resolve = (currentRequest: Request) =>
       handler.fetch(currentRequest, { context: { fromFetch: true } });
     if (import.meta.env.DEV) return resolve(request);
+
+    const redirectTo = getCanonicalOriginRedirect(request);
+    if (redirectTo) {
+      return Response.redirect(
+        redirectTo,
+        canonicalRedirectStatus(request.method)
+      );
+    }
+
     const { localeMiddleware } = await import('@/locale/middleware');
     return localeMiddleware(request, resolve);
   },

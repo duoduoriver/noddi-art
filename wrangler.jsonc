@@ -48,6 +48,10 @@
     {
       "pattern": "sunburstai.online",
       "custom_domain": true
+    },
+    {
+      "pattern": "www.sunburstai.online",
+      "custom_domain": true
     }
   ],
 

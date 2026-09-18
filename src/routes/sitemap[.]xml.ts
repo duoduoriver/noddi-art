@@ -17,7 +17,7 @@ export const Route = createFileRoute('/sitemap.xml')({
     handlers: {
       GET: async () => {
         const base = getBaseUrl().replace(/\/$/, '');
-        const seoReleaseDate = '2026-09-09';
+        const seoReleaseDate = '2026-09-18';
         const staticUrls: {
           path: string;
           lastmod?: string;
